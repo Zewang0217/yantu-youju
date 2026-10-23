@@ -1,0 +1,68 @@
+@startuml
+' 作者：ZCode（AI助手）
+' 创建日期：2026-10-23
+' 状态：领域模型草稿v0.1，待用户审阅；概念总览，非数据库设计
+' 对应文档：../领域与信息模型.md §1
+allowmixing
+title 领域总览：两个限界上下文与共享资料库 v0.1
+hide circle
+hide empty members
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+actor "学生" as Student
+actor "运营者（管理员）" as Admin
+
+package "资料上下文：信息获取与资料积累" {
+  class "院校·院系·专业方向\nInstitution/Department/Program" as Org
+  class "招生机会\nOpportunity" as Opp
+  class "申请条件规则\nEligibilityRule" as Rule
+  class "来源入口\nSourceEntry" as Entry
+  class "政策文档·版本\nPolicyDocument/Version" as Doc
+  class "证据\nEvidence" as Evidence
+  class "采集任务\nAcquisitionTask" as Task
+  class "复核记录\nReviewRecord" as Review
+  class "告警\nAlert" as Alert
+}
+
+package "咨询上下文：画像与个性化推荐" {
+  class "学生画像·版本\nStudentProfile/ProfileVersion" as Profile
+  class "咨询会话\nConsultationSession" as Session
+  class "科研突出判定\nResearchHighlightAssessment" as Research
+  class "候选\nCandidate" as Candidate
+  class "资格判断\nEligibilityJudgement" as Judge
+  class "推荐结果·推荐项\nRecommendation/Item" as Rec
+  class "待确认点\nUnverifiedPoint" as Pending
+}
+
+Student --> Session
+Admin --> Task : 发起年度/全局更新
+Admin --> Alert : 查看与仲裁
+
+Org --> Opp
+Opp --> Rule
+Rule --> Evidence
+Entry --> Doc : 获取途径
+Doc --> Evidence
+Doc --> Opp : 描述
+Task --> Entry : 沿入口采集
+Task --> Review
+Review --> Doc
+Review ..> Alert : 多次失败
+
+Session --> Profile : 沿用/更新
+Session --> Research
+Session --> Candidate
+Candidate --> Judge
+Session --> Rec
+Rec --> Pending
+Candidate ..> Opp : 跨上下文只读引用
+Rec ..> Evidence : 引用证据
+Session ..> Task : 时效核验请求\n（跨上下文契约，阶段4细化）
+
+note bottom of Rec
+  v0.7候选概念（结论变化/诊断/比较）
+  见咨询上下文概念类图，未采纳前不入MVP
+end note
+@enduml
