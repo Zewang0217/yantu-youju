@@ -69,11 +69,19 @@ PlantUML 以纯文本维护图源码,天然适配 git 版本管理与评审([Pla
 
 ## 4. 局限
 
-- 本调研基于公开文献与官方文档,未实测 PlantUML 本地渲染管线;导出脚本在图确认后另行验证。
+- 本调研基于公开文献与官方文档;PlantUML 本地渲染管线(JDK+plantuml.jar/插件)未搭建,当前使用在线渲染服务(见 §5 实测记录)。
 - Larman/Evans 原著以书籍为准,本稿引用的是可公开访问的摘要与社区资料;方法裁剪为 AI 建议,待团队确认。
 - Event Storming 未在团队内试运行,是否采用由团队决定。
 
-## 5. 参考
+## 5. 工具链实操记录(2026-10-23 实测,供后续会话复用)
+
+- **语法校验与导出可用 kroki.io**:`POST https://kroki.io/plantuml/svg`(或 `/plantuml/png`),请求体即 PlantUML 源码,需带 `Content-Type: text/plain; charset=utf-8` 与浏览器式 `User-Agent`;语法错误返回 HTTP 400 及大致行号,成功返回图形字节。
+- **plantuml.com 官方渲染服务**对无浏览器 UA 的程序化请求返回 403;如必须用官方服务,请求需模拟浏览器 UA。
+- **已知语法坑**:同一张图混用 `actor`(用例图元素)与 `class`(类图元素)时,PlantUML 会按 component 图解析并在 class 行报"Syntax Error",需在 `@startuml` 后加 `allowmixing` 指令。
+- **中文渲染**:SVG 中文本以文本形式保留,由查看端字体渲染,中文系统显示正常;kroki 的 PNG 栅格化经目检中文正常(2026-10-23 抽查 01/04 两图)。仓库以 SVG 为准。
+- 本项目 5 张图(`AI文档/05_需求分析/PlantUML/`)已全部通过该校验,SVG 与 `.puml` 源文件同目录同名存放。
+
+## 6. 参考
 
 - [UCL: Domain Conceptual Models](http://www0.cs.ucl.ac.uk/staff/E.Letier/book/302-Conceptual-Models.html) · [Stack Overflow: Conceptual vs Detailed](https://stackoverflow.com/questions/39606683/what-is-the-difference-between-conceptual-class-diagram-and-detailed-class-diagr)
 - [Fowler: Ubiquitous Language](https://martinfowler.com/bliki/UbiquitousLanguage.html) · [Fowler: Bounded Context](https://martinfowler.com/bliki/BoundedContext.html) · [Fowler: UML 模式标签页](https://martinfowler.com/tags/uml.html)
