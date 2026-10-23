@@ -1,0 +1,54 @@
+@startuml
+' 作者：Codex（AI助手）
+' 创建日期：2026-10-11
+' 整理日期：2026-10-11
+' 状态：设计草案，待用户审阅
+title 推免智能体概念架构 v0.1（待验证，尚未实现）
+skinparam componentStyle rectangle
+skinparam shadowing false
+left to right direction
+actor "申请者" as User
+actor "审核成员" as Reviewer
+cloud "官方招生网页\n及允许读取的附件" as Sources
+component "来源登记与定时采集\n模板优先，失败有界补查" as Collector
+database "原文与附件版本\n内容hash／时间／出处" as Raw
+component "候选字段提取\n类型校验与人工复核" as Extractor
+database "结构化事实与规则\n机会／证据／版本关系" as Facts
+database "混合检索索引\n有效年份／轮次过滤" as Index
+component "变更检测与影响分析" as Change
+component "前端Demo\n长期地址待部署验证" as UI
+component "服务端网关\n画像／鉴权／密钥保管" as API
+rectangle "AgentArts（区域、权限与费用待实测）" {
+  component "资格与解释工作流\n检索／工具调用／追问" as Workflow
+  component "模型接入与调试记录" as Model
+}
+component "HTTP／MCP工具服务\n事实查询／规则计算／证据校验" as Tools
+database "画像与推荐版本\n失效状态／任务" as Profiles
+User --> UI
+UI --> API
+API --> Workflow : 平台API（待验证）
+API --> Profiles
+Workflow --> Model
+Workflow --> Tools
+Workflow --> Index
+Tools --> Facts
+Tools --> Profiles
+Sources --> Collector
+Collector --> Raw
+Raw --> Extractor
+Reviewer --> Extractor : 审核歧义与关键字段
+Extractor --> Facts : 审核策略允许后写入
+Facts --> Index : 发布及索引更新
+Facts --> Change
+Change --> Profiles : 相关推荐失效／重算排队
+Change --> API : 页面变更提醒
+note bottom of Tools
+  远程MCP需平台可访问的公网端点与鉴权；
+  不把本地localhost当成可直接接入的地址。
+  工具仅暴露限定接口，原网页不作为系统指令。
+end note
+note bottom of UI
+  官方临时分享URL仅24小时，不能直接当长期Demo。
+  稳定API与前端方案需权限可用后实测。
+end note
+@enduml

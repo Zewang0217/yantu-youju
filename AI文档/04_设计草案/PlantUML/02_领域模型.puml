@@ -1,0 +1,118 @@
+@startuml
+' 作者：Codex（AI助手）
+' 创建日期：2026-10-11
+' 整理日期：2026-10-11
+' 状态：设计草案，待用户审阅
+title 推免领域模型 v0.1（概念关系，非最终数据库表）
+skinparam shadowing false
+hide methods
+class Institution {
+  institution_id
+  official_name
+  aliases
+}
+class Department {
+  department_id
+  official_name
+}
+class Program {
+  program_id
+  degree_type
+  discipline_code
+}
+class Source {
+  source_id
+  official_url
+  authority_scope
+  last_success_at
+}
+class DocumentVersion {
+  version_id
+  content_hash
+  published_at : nullable
+  fetched_at
+  last_verified_at
+  parse_state
+}
+class Opportunity {
+  opportunity_id
+  entry_year
+  graduation_cohort
+  official_round_name
+  application_deadline : nullable
+  state
+}
+class Evidence {
+  evidence_id
+  page_or_paragraph
+  field_name
+  original_excerpt
+}
+class EligibilityRule {
+  rule_id
+  all_any_expression
+  applicable_scope
+  exception_expression
+  review_state
+}
+class UserProfileVersion {
+  profile_version_id
+  major_and_cohort
+  rank_numerator_denominator
+  rank_scope
+  language_scores
+  nomination_state
+  explicit_preferences
+}
+enum EligibilityState {
+  ELIGIBLE
+  INELIGIBLE
+  UNKNOWN
+  CONFLICT
+}
+class Recommendation {
+  recommendation_id
+  eligibility_state
+  preference_reasons
+  evaluated_at
+  invalidated_at : nullable
+}
+class ChangeEvent {
+  event_id
+  changed_fields
+  observed_at
+}
+class ApplicationTask {
+  task_id
+  action
+  deadline : nullable
+  completion_state
+}
+Institution "1" -- "0..*" Department
+Department "1" -- "0..*" Program
+Program "1" -- "0..*" Opportunity
+Source "1" -- "0..*" DocumentVersion
+DocumentVersion "0..1" --> "0..1" DocumentVersion : supersedes
+DocumentVersion "0..*" -- "0..*" Opportunity : describes
+DocumentVersion "1" -- "0..*" Evidence
+Opportunity "0..*" -- "0..*" EligibilityRule
+EligibilityRule "0..*" -- "1..*" Evidence : supported by
+UserProfileVersion "1" -- "0..*" Recommendation
+Opportunity "1" -- "0..*" Recommendation
+Recommendation --> EligibilityState
+Recommendation "0..*" -- "0..*" Evidence
+Recommendation "0..*" -- "0..*" EligibilityRule : evaluated versions
+Recommendation "1" -- "0..*" ApplicationTask
+ApplicationTask "0..*" -- "1..*" Evidence
+ChangeEvent "0..*" -- "1..*" DocumentVersion : before / after
+ChangeEvent "0..*" -- "0..*" Recommendation : invalidates
+note bottom of EligibilityRule
+  未知字段、优先条件和硬条件分开；
+  条件例外、院系范围及年份不能省略。
+  冲突原文并存，等待复核。
+end note
+note bottom of Recommendation
+  保留画像、规则、证据的版本关联。
+  条件满足不代表录取，匹配分不表示概率。
+end note
+@enduml
