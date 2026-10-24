@@ -59,6 +59,22 @@ UML 活动图用**分区(partition,俗称泳道)**按职责组织活动,支持�
 
 PlantUML 以纯文本维护图源码,天然适配 git 版本管理与评审([PlantUML 活动图](https://plantuml.com/activity-diagram-beta)、[类图](https://plantuml.com/class-diagram));导出 SVG 后正文引用,与既有《软件开发流程与文档规划》第5节的图管理约定一致。可选的团队工作坊方法 Event Storming([eventstorming.com](https://eventstorming.com/))适合三人小组快速锤炼领域事件与术语,不作为必须步骤。
 
+### 2.7 真实开发是"直接设计图/领域模型"吗?(2026-10-23 补充)
+
+不是。真实工业实践中,领域建模之前与伴随的是**协作式需求发现**,且多数现代团队不以 UML 类图作为建模的起点。三种典型路线:
+
+| 路线 | 谁在用 | 流程特征 | 模型/图的角色 |
+|---|---|---|---|
+| 文档驱动 | 受监管行业(金融/政务)、外包与大型企业、有交付物评审要求的场景(参赛/立项/毕设) | 需求工程(用例/故事)→领域模型→架构→详细设计,顺序推进,文档即交付物 | 蓝图式,较完备 |
+| 现代DDD/敏捷 | 互联网产品团队(主流) | 用户故事+验收标准 → **Event Storming 工作坊**(领域事件→命令→聚合→上下文)→ **Example Mapping**(把每条业务规则钉成具体例子)→ 模型随代码演进(演化式设计) | UML 多为白板草图(sketch),不长期维护完整类图;"模型活在代码与测试里" |
+| 轻量CRUD | 简单系统/初创 | ER图+API 设计直接开搞 | 无显式领域模型;规则复杂时退化 |
+
+依据:Fowler [UML as Sketch](https://martinfowler.com/tags/uml.html)(敏捷团队多以 sketch 用 UML)与 [Is Design Dead?](https://martinfowler.com/articles/designDead.html)(计划式 vs 演化式设计);[Event Storming](https://eventstorming.com/);BDD 的 [Example Mapping](https://cucumber.io/docs/bdd/example-mapping)([Wynne 原文](https://medium.com/@mattwynne/introducing-example-mapping-42ccd15f8adf):故事→规则→例子→问题四色卡,25分钟一局)与 [Dan North: Introducing BDD](https://dannorth.net/introducing-bdd/)。
+
+**对本项目的裁剪**(AI建议):三人团队+参赛交付物要求,文档路线(当前走的)是合理选择,不必改流程;建议**补**两个真实团队常用的轻量实践,成本各约 1-2 小时:
+1. **三人 Event Storming 工作坊**:对着两条业务活动图,把"政策发布→机会开放→报名→复核→确认→政策变化"的领域事件贴出来,锤炼术语与流程缺口——产出直接修订领域模型;
+2. **Example Mapping 规则例子化**:给条件类型注册表里每条规则配 2-3 个具体学生样例(如"排名8/120+六级500,报软院'英语者优先'条款"→裁量型),这些例子直接成为 SRS 的验收条件与后续测试用例,同时持续核验模型表达力。
+
 ## 3. 对 2026-10-11 旧设计草案的复审结论
 
 | 旧图 | 复审结论 |
