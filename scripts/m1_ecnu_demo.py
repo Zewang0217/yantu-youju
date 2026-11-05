@@ -16,12 +16,21 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from yantu.acquisition import HtmlNoticeParser, fetch  # noqa: E402
+from yantu.acquisition.store import (  # noqa: E402
+    EntryBook,
+    EntryRecord,
+    OpportunityRepository,
+    SnapshotStore,
+    record_to_opportunity,
+)
+from yantu.acquisition.structurer import extract_window_candidates  # noqa: E402
 from yantu.domain import condition_codec as codec  # noqa: E402
 from yantu.domain.eligibility import evaluate  # noqa: E402
 from yantu.domain.models import Evidence, Opportunity, StudentProfile, Window  # noqa: E402
 from yantu.domain.ranking import rank  # noqa: E402
 
 SEED = ROOT / "data" / "pilot" / "ecnu_2027_seed.json"
+VAR = ROOT / "var"  # 运行时产物(快照/入口库/机会库),不入库
 
 LIVE_URLS = [
     ("软院预报名", "https://sei.ecnu.edu.cn/c4/0d/c33171a771085/page.htm"),
@@ -35,54 +44,64 @@ def section(title: str) -> None:
 
 
 def phase1_live_fetch() -> dict[str, str]:
-    """真实抓取,返回 url->sha 摘要;失败降级。"""
-    section("① 真实抓取与快照")
+    """真实抓取→快照落盘(内容寻址)→入口库登记;失败降级。"""
+    section("① 真实抓取/快照落盘/入口库")
+    store = SnapshotStore(VAR / "snapshots")
+    book = EntryBook(VAR / "entries.json")
     shas: dict[str, str] = {}
+    parsed_texts: dict[str, str] = {}
     for name, url in LIVE_URLS:
         try:
             snap = fetch(url)
             r = HtmlNoticeParser().parse(snap)
+            store.save(snap, title=r.title)
+            book.upsert(
+                EntryRecord(
+                    url=url, name=name, school="华东师范大学",
+                    carrier=snap.carrier, last_status="ok",
+                    last_sha256=snap.sha256, last_fetched=snap.fetched_at.isoformat(timespec="seconds"),
+                )
+            )
             print(f"[OK] {name}: HTTP {snap.status_code} {len(snap.body)}B "
-                  f"sha256={snap.sha256[:12]}… 解析={r.status.value}")
+                  f"sha256={snap.sha256[:12]}… 解析={r.status.value} 已落盘")
             print(f"     标题: {r.title[:52]}")
             shas[url] = snap.sha256[:12]
+            parsed_texts[name] = r.text
         except Exception as e:  # FetchError等:降级,不中断演示
+            book.upsert(EntryRecord(url=url, name=name, last_status="fetch_failed", notes=str(e)[:80]))
             print(f"[降级] {name}: {type(e).__name__}: {e}")
-    if not shas:
+    book.save()
+    if parsed_texts:
+        _phase1b_auto_extract(parsed_texts)
+    else:
         print("(全部抓取失败:本次仅演示种子数据判定,证据哈希采用种子文件内2026-11-05记录)")
     return shas
 
 
+def _phase1b_auto_extract(parsed_texts: dict[str, str]) -> None:
+    """确定性窗口候选提取,与种子数据交叉验证(基线自检)。"""
+    section("①b 自动截止提取(确定性基线)与种子交叉验证")
+    candidates = extract_window_candidates(parsed_texts.get("软院考核细则", ""))
+    for c in candidates:
+        print(f"  [{c.confidence}/{c.kind}] {c.date} ← “{c.quote[:34]}…”")
+    if not candidates:
+        print("  (无句式命中的截止/开放候选——保守降级为不提取)")
+    seed_end = datetime.fromisoformat("2026-09-07T12:00:00")
+    exact_ends = [c.date for c in candidates if c.confidence == "exact" and c.kind == "deadline"]
+    if exact_ends:
+        verdict = "一致 ✓" if max(exact_ends) == seed_end else "不一致 ✗(以种子为准,启发式需复核)"
+        print(f"  交叉验证: 提取截止 max={max(exact_ends)} vs 种子={seed_end} → {verdict}")
+
+
 def load_opportunities() -> list[Opportunity]:
+    """种子 → 机会库落盘 → 重载使用(验证 spec 往返,而非直接用内存对象)。"""
     data = json.loads(SEED.read_text(encoding="utf-8"))
-    out: list[Opportunity] = []
-    for o in data["opportunities"]:
-        windows = tuple(
-            Window(
-                entry_name=w["entry_name"],
-                required=w.get("required", True),
-                start=datetime.fromisoformat(w["start"]) if w.get("start") else None,
-                end=datetime.fromisoformat(w["end"]) if w.get("end") else None,
-            )
-            for w in o["windows"]
-        )
-        evidence = tuple(Evidence(**e) for e in o.get("evidence", []))
-        out.append(
-            Opportunity(
-                oid=o["oid"],
-                school=o["school"],
-                department=o["department"],
-                program=o["program"],
-                batch=o["batch"],
-                entry_year=o["entry_year"],
-                degree_type=o["degree_type"],
-                windows=windows,
-                conditions=codec.build(o["conditions_spec"]),
-                priorities=tuple(codec.build_priority(p) for p in o.get("priorities_spec", [])),
-                evidence=evidence,
-            )
-        )
-    return out
+    ops = [record_to_opportunity(o) for o in data["opportunities"]]
+    repo = OpportunityRepository(VAR / "opportunities.json")
+    repo.save(ops)
+    reloaded = repo.load()
+    assert [o.oid for o in reloaded] == [o.oid for o in ops]
+    return reloaded
 
 
 def phase2_judge(ops: list[Opportunity]) -> None:
@@ -144,7 +163,7 @@ def main() -> None:
     phase2_judge(ops)
     phase3_rank(ops)
     phase4_evidence(ops)
-    print("\n(种子数据为人工结构化;条款自动结构化与复核门禁属后续采集Agent任务)")
+    print("\n(运行产物在 var/(不入库);条款LLM自动结构化与复核门禁属后续采集Agent任务)")
 
 
 if __name__ == "__main__":

@@ -22,3 +22,6 @@ venv/
 dist/
 build/
 .coverage
+
+# —— 运行时产物(快照/入口库/机会库,demo写入) ——
+/var/
