@@ -1,0 +1,45 @@
+@startuml
+' author: ZCode(AI助手)
+' created: 2026-11-05
+' status: 交互设计草稿v0.1配套图,待审阅;界面级流转,非实现级控制流
+' 对应文档: ../交互与页面设计.md §2;需求依据 SRS v0.3 REC-01~15、NFR-07
+title 学生侧界面流转 v0.1(粗粒度草图)
+skinparam shadowing false
+
+start
+:进入新会话【I1 对话首页】;
+if (已有画像?) then (有)
+  :询问:复用 / 修改 / 新建【I1a 画像复用卡】;
+  if (用户回应?) then (修改或新建)
+    :进入画像采集对话;
+  elseif (暂不决定) then
+    :等待输入,不默认更改已有画像;
+    stop
+  else (复用)
+  endif
+else (无)
+  :创建新画像,进入画像采集对话;
+endif
+repeat
+  :多轮澄清【I2 画像卡】【I3 澄清卡】;
+  note right
+    排名问分母与时段,GPA问量程;
+    "缺失"与"没有"分开记录
+  end note
+  if (画像足以确定检索范围?) then (是)
+  else (否,如缺目标方向)
+    :提示等待输入,不猜测;
+    stop
+  endif
+  :检索已复核资料,触发候选复核【I4 复核等待】;
+  note right
+    展示进度、部分失败与覆盖边界;
+    不无限显示"处理中"
+  end note
+  :逐项资格判断,复核更新后重判;
+  :输出推荐【I5 推荐列表】;
+  :查看证据与待确认点【I6 机会详情卡】;
+  :末尾未确认提示与跳过说明【I7 边缘区】;
+repeat while (用户补充信息并重判?) is (是)
+stop
+@enduml

@@ -1,0 +1,99 @@
+' author: Codex（AI助手，信息采集设计子代理）
+' created: 2026-10-29
+' updated: 2026-10-29
+' version: v0.3，独立审阅修订：合法性失败出口/有界repair
+' status: 架构草稿，未渲染或运行验证
+@startuml
+title 资料线：自动采集、证据核验与有界返工
+start
+partition 应用编排器 {
+  :鉴权/范围/年度/预算/幂等检查;
+  if (请求不合法?) then (是)
+    :返回结构化拒绝结果;
+    stop
+  endif
+  :保存任务并透传requestId;
+  :按院校/单位拆任务并分配预算;
+}
+note right
+  院校任务可并行。
+  下述循环表示一个子任务；
+  总预算跨角色及attempt累计。
+end note
+partition 入口与获取 {
+  :优先复用入口;
+  if (入口失效或存在缺口?) then (是)
+    :有界探索Agent返回候选来源/覆盖缺口;
+  endif
+}
+while (仍有未处理来源/机会 且 预算允许?) is (是)
+  partition 入口与获取 {
+    :领取一个来源工作项并预留预算;
+    :只读获取并保存原始快照;
+    if (来源最终不可访问?) then (是)
+      :记录当前来源access_failed及受影响机会skip范围;
+      :累计失败，满足策略则WARN告警;
+      :结算/释放本次预算，结束当前来源分支;
+    else (否)
+      :解析正文/附件/表格并保留定位;
+      :抽取机会/字段/适用范围/原文证据;
+      :保存待复核产物并结算预算;
+    endif
+  }
+endwhile (否)
+partition 抽取与复核 {
+  :汇总可读来源与失败范围，关联跨文档证据;
+  while (仍有待检查产物?) is (是)
+    :code检查当前产物schema/权限/引用/预算;
+    while (仅结构错误 且 授权与预算有效 且 未达repair上限?) is (是)
+      :预留repair预算，有限修正结构并结算;
+      :重新执行当前产物全部code检查;
+    endwhile (否)
+    if (当前产物全部code硬门槛通过?) then (是)
+      :独立对照原文核验来源/时间/范围/一致性;
+      while (需补查或重提取 且 剩余预算允许 且 可获得新增信息?) is (是)
+        :向编排器提出结构化followUpRequest;
+        :编排器校验范围/去重并原子预留预算;
+        :只读补查/重提取，保存结果并结算预算;
+        :对新产物重新执行code门禁;
+        if (新产物code门禁通过?) then (是)
+          :复核新增证据，不受影响的独立机会继续;
+        else (否)
+          :新产物hardFail/quarantined，不付费核验或发布;
+          :禁止该失败产物再次进入本次返工循环;
+        endif
+      endwhile (否)
+      :ClaimVerdict = supported/unsupported/conflict/unknown;
+  :获取/解析不可用另记usability或issue;
+      :仅合法且核验完毕的结果加入发布待选集;
+    else (否)
+      :当前产物hardFail/quarantined并保存原因;
+      :权限/预算失败终止对应产物或子任务;
+      :禁止该产物付费核验及发布，独立产物继续;
+    endif
+  endwhile (否)
+}
+partition 质量发布 {
+  :隔离有问题字段/机会，保留双方原文;
+  :仅supported已发布字段进入事实检索;
+  :unknown/conflict/unsupported仅保留状态元数据和证据;
+  if (待选集中存在合法且可发布资料?) then (是)
+    :同事务校验taskId/fencingToken/expectedCurrentVersion;
+    :检查本地审计可持久化;
+    if (租约有效且基线一致且可提交?) then (是)
+      :原子幂等提交版本/复核/审计;
+    else (否)
+      :记录发布冲突或审计失败;
+      :交编排器在剩余预算内安排重核/后续任务;
+    endif
+  endif
+  :汇总覆盖/未完成/变化/新机会/失败与用量;
+  :返回各机会质量与skip范围;
+}
+note right
+  当前来源失败不stop整批任务。
+  受影响机会按PRD跳过，独立机会继续；
+  最终以覆盖/产物汇总taskStatus。
+end note
+stop
+@enduml

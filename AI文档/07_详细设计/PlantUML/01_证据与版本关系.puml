@@ -1,0 +1,61 @@
+@startuml
+' author: Codex（AI助手）
+' created: 2026-10-29
+' updated: 2026-11-05(ZCode修正:class名加引号以通过PlantUML语法,内容不变)
+' status: 候选逻辑数据关系，非已实现表结构
+title 证据、字段质量与推荐版本的逻辑关联
+hide methods
+skinparam shadowing false
+class "来源入口" as Entry
+class "原始快照" as Snapshot {
+  内容哈希 / 载体
+  发布时间 / 抓取时间
+}
+class "原文证据" as Evidence {
+  页段表格定位
+  原值 / 原文
+}
+class "机会版本" as Opportunity {
+  身份 / 年度 / 轨道
+}
+class "规则版本" as Rule {
+  作用类型 / 适用范围
+  AND_OR / 放宽逻辑
+}
+class "字段核验" as Check {
+  claimVerdict / usability
+  检查范围 / 成功时间
+}
+class "发布记录" as Pub {
+  expectedVersion / fencingToken
+  publicationStatus / 审计
+}
+class "画像版本" as Profile
+class "推荐运行" as Run {
+  asOf / 输出时间
+  模型提示词配置版本
+  算法特征版本
+}
+class "推荐项" as Item {
+  资格 / 开放 / 复核状态
+  排序 / 理由 / 未知点
+}
+Entry "1" -- "0..*" Snapshot
+Snapshot "1" -- "0..*" Evidence
+Evidence "1..*" -- "0..*" Check
+Opportunity "0..*" -- "0..*" Rule : 带适用范围的引用
+Rule "0..*" -- "1..*" Evidence
+Check "1..*" -- "0..*" Pub
+Pub "0..*" -- "1..*" Opportunity
+Pub "0..*" -- "0..*" Rule
+Profile "1" -- "0..*" Run
+Run "1" -- "0..*" Item
+Item "0..*" --> "1" Opportunity : 固定版本
+Item "0..*" --> "0..*" Rule : 所用条件
+Item "0..*" --> "1..*" Evidence : 理由依据
+note bottom of Pub
+快照与历史版本不可变；当前指针独立。
+字段unknown/conflict不可充作已核实事实。
+原始提案无证据时留隔离区，不画入发布链。
+end note
+@enduml

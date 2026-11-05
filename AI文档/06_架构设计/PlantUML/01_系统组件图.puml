@@ -1,0 +1,65 @@
+@startuml
+' author: Codex（AI助手）
+' created: 2026-10-29
+' updated: 2026-10-29
+' status: 候选逻辑架构，未实现
+title 双Agent系统逻辑组件与写入边界
+left to right direction
+skinparam componentStyle rectangle
+skinparam shadowing false
+actor 学生 as User
+actor 管理员 as Admin
+package "接口与应用边界" {
+  component "对话入口 / 鉴权" as Chat
+  component "管理入口 / 鉴权" as Manage
+  component "咨询应用编排\n画像确认/复核/重判/输出" as Consult
+  component "资料应用编排\n范围/预算/调度/发布" as Acquire
+}
+package "角色与纯业务" {
+  component "咨询Agent角色\n澄清/科研/语义/解释" as RecAgents
+  component "资料Agent角色\n探索/抽取/独立核验" as AcqAgents
+  component "纯资格规则 / 排序器" as Rules
+  component "纯质量 / 版本约束" as Quality
+}
+package "I/O适配器" {
+  component "网络/文档解析/LLM" as IO
+  component "资料发布事务\n执行权+版本+审计" as Publish
+  component "画像/任务仓储" as Repo
+}
+database "版本资料/入口/证据\n仅资料发布写入" as Corpus
+database "用户画像/单次任务\n按用户与任务隔离" as Private
+component "Eval运行器\ncode / 校准judge / 人工" as Eval
+database "隔离fixture与双报告" as Fixtures
+component "结构化日志/本地审计\nrequestId与步骤关联" as Logs
+User --> Chat
+Admin --> Manage
+Chat --> Consult
+Manage --> Acquire
+Consult --> RecAgents
+Consult --> Rules
+Consult --> Acquire : 限范围复核请求/返回版本
+Acquire --> AcqAgents
+Acquire --> Quality
+AcqAgents --> IO
+RecAgents --> IO
+Acquire --> Publish
+Publish --> Corpus : 唯一公开资料写路径
+Consult --> Corpus : 只读已发布引用
+Consult --> Repo
+Acquire --> Repo
+Repo --> Private
+Consult --> Logs
+Acquire --> Logs
+IO --> Logs
+Eval --> Fixtures : 只读fixture/写评估报告
+Eval --> Consult : 隔离运行入口
+Eval --> Acquire : 隔离运行入口
+note bottom of Eval
+评估端口注入fixture适配器；
+无生产发布凭据，不直写生产事实。
+end note
+note bottom of Rules
+领域纯函数不依赖I/O或日志；
+应用声明端口，基础设施实现。
+end note
+@enduml

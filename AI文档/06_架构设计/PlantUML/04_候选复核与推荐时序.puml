@@ -1,0 +1,103 @@
+@startuml
+' author: Codex（AI助手，推荐系统设计子代理）
+' created: 2026-10-29
+' updated: 2026-10-29
+' version: v0.2
+' status: 候选交互源图，待独立评审与实际语法/渲染验证；未实现
+title 候选复核与个性化推荐：请求—返回与发布关口
+hide footbox
+actor 学生 as Student
+participant "入口/咨询应用编排器" as App
+participant "对话与科研分析角色" as Profile
+database "本用户画像库" as Profiles
+database "已复核公开资料库" as Corpus
+participant "资料团队 review_scope" as Acquisition
+participant "规则/时间求值器" as Rules
+participant "可插拔 Ranker" as Ranker
+participant "证据约束解释角色" as Explainer
+database "运行与审计仓储" as Runs
+
+Student -> App : 发起咨询（已鉴权用户）
+App -> Profiles : 读取本用户画像版本
+Profiles --> App : 当前版本或不存在
+alt 已有画像
+  App --> Student : 询问是否沿用或修改
+  App -> Runs : 保存waiting_input与resumePhase
+  Student -> App : 沿用/修改回答（版本校验）
+else 无画像
+  App -> Profile : 当前话轮→画像/澄清提案
+  Profile --> App : 字段提案与具体未知点
+  App --> Student : 必要澄清，确认事实与偏好
+  Student -> App : 回答（允许可选字段留空）
+end
+App -> Profiles : 保存经确认画像版本（期望版本检查）
+Profiles --> App : profileVersion
+App -> Profile : 检索前科研标记分析（标准版本）
+Profile --> App : 标记/依据/unknown；非院系批准
+App -> Corpus : 按方向与年度检索，读取规则/证据版本
+Corpus --> App : 初筛范围与候选、覆盖缺口
+App -> Rules : 初步三值求值（保留AND/OR/放宽）
+Rules --> App : pass/fail/unknown与理由
+App -> Acquisition : 候选相关范围、旧版本、待查点、deadline/预算
+note right of Acquisition
+不传成绩与私人偏好；
+检查旧通知变化与范围内新增机会。
+跨角色请求—返回，不接管学生会话。
+end note
+Acquisition --> App : 每机会核验结果/新版本/新增机会/失败
+
+loop 每个受影响或新发现机会
+  alt 关键来源access_failed
+    App -> Runs : 本次skip与错误（不用旧缓存伪装成功）
+  else 核验成功或可读但有未决条件
+    App -> Rules : 按返回版本重判资格与窗口（注入时点）
+    Rules --> App : 资格×开放状态×依据/未知点
+    alt pass或unknown，且已核实open
+      App -> Runs : 加入正常排序集合，保留unknown标签
+    else 开放unknown且资格pass
+      App -> Runs : 仅加入末尾提示集合及建议行动
+    else fail/closed/not_yet_open或不满足提示条件
+      App -> Runs : 排除/缺损记录与原因
+    end
+  end
+end
+App -> Ranker : 固定候选/特征/缺失掩码/偏好与版本
+Ranker --> App : 排名、贡献/缺失、算法版本、用量
+App -> Explainer : 画像必要字段+排名+政策/历史证据引用
+Explainer --> App : 理由与待确认点、末尾提示草稿
+App -> Corpus : 检查关键当前指针与证据版本
+Corpus --> App : 当前版本
+App -> Profiles : 检查画像仍为采用版本
+Profiles --> App : 当前画像版本
+App -> App : 读取now、权限和当前引用，形成decisionAt
+App -> Rules : 传已解引用值、版本与decisionAt，纯校验窗口/输出
+Rules --> App : 可发布 / 需重判
+alt 版本或时间变化且预算允许
+  ref over App, Explainer : 返回重判→排序→解释→发布校验（有界）
+else 预算耗尽或无法核实
+  App -> Runs : partial/failed与缺损；仅保留仍可证明有效项
+else 所有采用项通过
+  App -> Runs : save_recommendation（expectedProfileVersion、关键版本、窗口、decisionAt）
+  note right of Runs
+  同事务校验画像/规则/机会当前版本与窗口，
+  保存结果和关键审计；不以之前预检查代替。
+  end note
+  alt 条件校验与提交成功
+    Runs --> App : 已保存completed/partial及结果引用
+  else 保存前版本/窗口冲突
+    Runs --> App : 拒绝陈旧写入，不标completed
+    alt 剩余预算允许
+      ref over App, Runs : 读取新版→重判/重排/解释→再次条件保存（有界）
+    else 预算耗尽
+      App -> Runs : 显式failed或仅保存重新核实的partial
+    end
+  else 关键持久化/审计失败
+    Runs --> App : 保存失败；不返回已保存成功
+  end
+end
+App --> Student : 仅返回已合法保存的结果，或明确未完成/无结果
+note over App, Runs
+应用拥有控制状态与发布权；Agent只返回提案。
+requestId/run/task/step关联；禁止记录隐藏推理与凭据。
+end note
+@enduml

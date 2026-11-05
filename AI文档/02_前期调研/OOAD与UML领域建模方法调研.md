@@ -1,7 +1,7 @@
 ---
 author: 'ZCode（AI助手）'
 created: '2026-10-23'
-updated: '2026-10-23'
+updated: '2026-11-05'
 version: 'v0.1'
 status: '方法调研草稿，待用户审阅；调研为文献与官方文档检查，未实测工具链'
 ---
@@ -93,6 +93,7 @@ PlantUML 以纯文本维护图源码,天然适配 git 版本管理与评审([Pla
 
 - **语法校验与导出可用 kroki.io**:`POST https://kroki.io/plantuml/svg`(或 `/plantuml/png`),请求体即 PlantUML 源码,需带 `Content-Type: text/plain; charset=utf-8` 与浏览器式 `User-Agent`;语法错误返回 HTTP 400 及大致行号,成功返回图形字节。
 - **plantuml.com 官方渲染服务**对无浏览器 UA 的程序化请求返回 403;如必须用官方服务,请求需模拟浏览器 UA。
+- **已知语法坑(类名别名)**:`class 名字 as 别名` 的名字必须加引号写成 `class "名字" as 别名`,否则该版 PlantUML 连 `class Foo as F` 也报 "Syntax Error (Assumed diagram type: sequence)"(2026-11-05 实测;修正见 `AI文档/07_详细设计/PlantUML/01_证据与版本关系.puml` 文件头)。
 - **已知语法坑**:同一张图混用 `actor`(用例图元素)与 `class`(类图元素)时,PlantUML 会按 component 图解析并在 class 行报"Syntax Error",需在 `@startuml` 后加 `allowmixing` 指令。
 - **中文渲染**:SVG 中文本以文本形式保留,由查看端字体渲染,中文系统显示正常;kroki 的 PNG 栅格化经目检中文正常(2026-10-23 抽查 01/04 两图)。仓库以 SVG 为准。
 - 本项目 5 张图(`AI文档/05_需求分析/PlantUML/`)已全部通过该校验,SVG 与 `.puml` 源文件同目录同名存放。

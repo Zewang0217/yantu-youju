@@ -1,0 +1,31 @@
+@startuml
+' author: Codex（AI助手）
+' created: 2026-10-29
+' updated: 2026-10-29
+' status: 依据SRS v0.3工作稿的用例草案，未完成渲染或实现验证
+title 推免MVP主要用例与权限
+left to right direction
+skinparam shadowing false
+actor 学生 as Student
+actor 管理员 as Admin
+actor 评估维护者 as Evaluator
+rectangle "推免个性化推荐系统" {
+  usecase "确认/补充可复用画像" as Profile
+  usecase "获取个性化机会推荐\n理由/政策/未知点" as Recommend
+  usecase "核验候选来源并重判" as Review
+  usecase "首次/新年度/全局资料更新" as Update
+  usecase "查看异常告警与处理争议" as Alerts
+  usecase "隔离评估/人工复标/版本比较" as Eval
+}
+Student --> Profile
+Student --> Recommend
+Recommend ..> Profile : <<include>>
+Recommend ..> Review : <<include>>
+Admin --> Update
+Admin --> Alerts
+Evaluator --> Eval
+note bottom of Eval
+评估是内部维护用例；不等于学生可访问
+真实用户原始资料或触发全局更新。
+end note
+@enduml

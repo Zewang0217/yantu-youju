@@ -1,0 +1,43 @@
+' author: Codex（AI助手，信息采集设计子代理）
+' created: 2026-10-29
+' updated: 2026-10-29
+' version: v0.2，控制状态与currentStage分离
+' status: 架构草稿，未渲染或运行验证
+@startuml
+title 采集任务控制状态taskStatus：与currentStage/资料发布/开放/资格分离
+[*] --> queued : 合法任务入库
+queued --> running : 获取执行权/租约fencingToken及预算
+queued --> cancelled : 管理员取消
+running --> retry_wait : 暂时错误且可幂等重试\n剩余预算允许
+retry_wait --> running : 到退避时间\n同taskId，新attempt
+retry_wait --> partial : 预算耗尽且存在可用产物
+retry_wait --> failed : 无可用产物且不可继续
+running --> completed : 规定范围已处理且产物提交
+running --> partial : 有可用产物且仍有未覆盖/隔离/失败
+running --> failed : 无可用产物且不可恢复
+running --> cancelled : 取消请求在安全边界生效
+retry_wait --> cancelled : 取消
+completed --> [*]
+partial --> [*]
+failed --> [*]
+cancelled --> [*]
+note right of running
+  currentStage另存：discovering/fetching/parsing/
+  extracting/verifying/publishing，不是taskStatus。
+  schema合法不等于事实已验证。
+  子任务错误不直接把整校所有机会标失败。
+  工具调用前原子预留预算，结束后结算。
+  发布同事务核对taskId+fencingToken+
+  expectedCurrentVersion，过期worker拒写。
+end note
+note bottom of partial
+  终态含原因、范围、产物引用。
+  后续显式新任务可引用旧产物继续；
+  不在终态后隐式无限续费。
+end note
+note bottom of completed
+  completed ≠ 存在开放机会
+  completed ≠ 每字段均为已知
+  发布状态与报名/资格另行建模
+end note
+@enduml
