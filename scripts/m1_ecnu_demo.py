@@ -15,18 +15,16 @@ from datetime import datetime
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from yantu.acquisition import HtmlNoticeParser, fetch  # noqa: E402
+from yantu.acquisition.harvest import HarvestService  # noqa: E402
 from yantu.acquisition.store import (  # noqa: E402
     EntryBook,
-    EntryRecord,
     OpportunityRepository,
     SnapshotStore,
     record_to_opportunity,
 )
 from yantu.acquisition.structurer import extract_window_candidates  # noqa: E402
-from yantu.domain import condition_codec as codec  # noqa: E402
 from yantu.domain.eligibility import evaluate  # noqa: E402
-from yantu.domain.models import Evidence, Opportunity, StudentProfile, Window  # noqa: E402
+from yantu.domain.models import Opportunity, StudentProfile  # noqa: E402
 from yantu.domain.ranking import rank  # noqa: E402
 
 SEED = ROOT / "data" / "pilot" / "ecnu_2027_seed.json"
@@ -43,39 +41,27 @@ def section(title: str) -> None:
     print(f"\n{'=' * 12} {title} {'=' * 12}")
 
 
-def phase1_live_fetch() -> dict[str, str]:
-    """真实抓取→快照落盘(内容寻址)→入口库登记;失败降级。"""
-    section("① 真实抓取/快照落盘/入口库")
-    store = SnapshotStore(VAR / "snapshots")
-    book = EntryBook(VAR / "entries.json")
-    shas: dict[str, str] = {}
+def phase1_live_fetch() -> None:
+    """R3 门面:一次调用完成 抓取→解析→快照落盘→入口库登记;失败降级。"""
+    section("① 真实抓取/快照落盘/入口库(HarvestService)")
+    svc = HarvestService(
+        SnapshotStore(VAR / "snapshots"), EntryBook(VAR / "entries.json")
+    )
     parsed_texts: dict[str, str] = {}
     for name, url in LIVE_URLS:
-        try:
-            snap = fetch(url)
-            r = HtmlNoticeParser().parse(snap)
-            store.save(snap, title=r.title)
-            book.upsert(
-                EntryRecord(
-                    url=url, name=name, school="华东师范大学",
-                    carrier=snap.carrier, last_status="ok",
-                    last_sha256=snap.sha256, last_fetched=snap.fetched_at.isoformat(timespec="seconds"),
-                )
-            )
-            print(f"[OK] {name}: HTTP {snap.status_code} {len(snap.body)}B "
-                  f"sha256={snap.sha256[:12]}… 解析={r.status.value} 已落盘")
+        outcome = svc.collect(url, name=name, school="华东师范大学")
+        if outcome.ok:
+            r = outcome.parse_result
+            print(f"[OK] {name}: {len(outcome.snapshot.body)}B sha256={outcome.sha256[:12]}… "
+                  f"解析={r.status.value} 已落盘")
             print(f"     标题: {r.title[:52]}")
-            shas[url] = snap.sha256[:12]
             parsed_texts[name] = r.text
-        except Exception as e:  # FetchError等:降级,不中断演示
-            book.upsert(EntryRecord(url=url, name=name, last_status="fetch_failed", notes=str(e)[:80]))
-            print(f"[降级] {name}: {type(e).__name__}: {e}")
-    book.save()
+        else:
+            print(f"[降级] {name}: {outcome.error}")
     if parsed_texts:
         _phase1b_auto_extract(parsed_texts)
     else:
         print("(全部抓取失败:本次仅演示种子数据判定,证据哈希采用种子文件内2026-11-05记录)")
-    return shas
 
 
 def _phase1b_auto_extract(parsed_texts: dict[str, str]) -> None:

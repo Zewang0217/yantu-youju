@@ -1,12 +1,41 @@
-"""资料采集线(M1续):抓取快照与载体解析。
+"""资料采集线(M1续):抓取快照、载体解析、落盘存储与确定性结构化。
 
-按 HLD 决策 F7 协议实现:Parser 按载体选择(Registry),解析状态取 SRS §4
-(complete/partial/unsupported/failed);抓取与解析是两类失败,分开建模
-(访问失败≠解析失败)。本模块只做确定性处理,不含 LLM/爬虫策略(后续按
-06 设计稿的采集Agent角色接入)。
+层次:fetcher(快照) → parsers(注册表分发) → store(落盘三件套);
+harvest 为门面编排;structurer 为确定性窗口提取基线;
+text_dates 为统一日期解析。LLM 条款结构化(采集Agent)按 06 设计稿后续接入。
 """
 
 from .fetcher import FetchError, Snapshot, fetch
-from .parsers import HtmlNoticeParser, ParseResult, ParseStatus
+from .harvest import HarvestOutcome, HarvestService
+from .parsers import (
+    DEFAULT_REGISTRY,
+    HtmlNoticeParser,
+    ParseResult,
+    ParseStatus,
+    Parser,
+    ParserRegistry,
+    extract_dates,
+    parse_snapshot,
+)
+from .store import (
+    EntryBook,
+    EntryRecord,
+    OpportunityRepository,
+    SnapshotStore,
+    opportunity_to_record,
+    record_to_opportunity,
+)
+from .structurer import WindowCandidate, extract_window_candidates, merge_deadline
+from .text_dates import DatetimeHit, find_datetimes
 
-__all__ = ["fetch", "Snapshot", "FetchError", "HtmlNoticeParser", "ParseResult", "ParseStatus"]
+__all__ = [
+    "fetch", "Snapshot", "FetchError",
+    "HtmlNoticeParser", "Parser", "ParserRegistry", "DEFAULT_REGISTRY",
+    "parse_snapshot", "extract_dates",
+    "ParseResult", "ParseStatus",
+    "SnapshotStore", "EntryBook", "EntryRecord", "OpportunityRepository",
+    "opportunity_to_record", "record_to_opportunity",
+    "HarvestService", "HarvestOutcome",
+    "find_datetimes", "DatetimeHit",
+    "WindowCandidate", "extract_window_candidates", "merge_deadline",
+]

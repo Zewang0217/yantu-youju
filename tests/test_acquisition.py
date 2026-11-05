@@ -11,6 +11,8 @@ from yantu.acquisition.fetcher import FetchError, Snapshot
 from yantu.acquisition.parsers import (
     HtmlNoticeParser,
     ParseStatus,
+    ParserRegistry,
+    parse_snapshot,
     extract_dates,
 )
 
@@ -68,10 +70,48 @@ class TestHtmlNoticeParser(unittest.TestCase):
         self.assertEqual(r.status, ParseStatus.PARTIAL)
         self.assertTrue(any("日期候选" in n for n in r.notes))
 
-    def test_non_html_unsupported(self):
-        r = self.parser.parse(make_snapshot(b"%PDF-1.7", "application/pdf"))
+    def test_non_html_unsupported_by_dispatcher(self):
+        """R1:载体分发由 parse_snapshot 决定;无解析器→UNSUPPORTED。"""
+        r = parse_snapshot(make_snapshot(b"%PDF-1.7", "application/pdf"))
         self.assertEqual(r.status, ParseStatus.UNSUPPORTED)
-        self.assertTrue(any("PDF" in n or "载体" in n for n in r.notes))
+        self.assertTrue(any("载体" in n for n in r.notes))
+
+    def test_navigation_cut(self):
+        """R4:导航菜单被削掉,正文从标题处开始。"""
+        html = (
+            "<html><head><title>软件工程学院2027年预报名通知</title></head><body>"
+            "首页 学院概况 师资队伍 Toggle navigation "
+            "软件工程学院2027年预报名通知 报名截止时间:2026年9月10日 12:00。"
+            "</body></html>"
+        )
+        r = self.parser.parse(make_snapshot(html.encode("utf-8")))
+        self.assertTrue(r.text.startswith("软件工程学院"), msg=r.text[:40])
+        self.assertNotIn("学院概况", r.text)
+        self.assertIn(datetime(2026, 9, 10, 12, 0), r.dates)
+
+
+class TestParserRegistry(unittest.TestCase):
+    def test_register_and_dispatch(self):
+        class FakePdfParser:
+            def supports(self, carrier):
+                return carrier == "application/pdf"
+
+            def parse(self, snapshot):
+                return ParseStatus.COMPLETE  # 测试桩:非ParseResult仅验证分发
+
+        registry = ParserRegistry()
+        registry.register(FakePdfParser())
+        self.assertIsInstance(registry.select("application/pdf"), FakePdfParser)
+        self.assertIsNone(registry.select("text/html"))
+
+    def test_default_registry_has_html(self):
+        from yantu.acquisition.parsers import DEFAULT_REGISTRY
+
+        self.assertIsNotNone(DEFAULT_REGISTRY.select("text/html"))
+
+
+class TestHtmlNoticeParserTail(TestHtmlNoticeParser):
+    """归位:gbk 解码与 supports 属于 HtmlNoticeParser 行为。"""
 
     def test_gbk_decoding(self):
         html = "<html><head><meta charset=\"gbk\"><title>中文标题GBK</title></head><body>2026年9月1日</body></html>"

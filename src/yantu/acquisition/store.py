@@ -74,21 +74,22 @@ class SnapshotStore:
         if not body_path.exists():  # 内容寻址:已存在即同一内容
             body_path.write_bytes(snapshot.body)
         meta_path = self._root / f"{snapshot.sha256}.meta.json"
-        meta_path.write_text(
-            json.dumps(
-                {
-                    "url": snapshot.url,
-                    "fetched_at": snapshot.fetched_at.isoformat(),
-                    "status_code": snapshot.status_code,
-                    "content_type": snapshot.content_type,
-                    "sha256": snapshot.sha256,
-                    "title": title,
-                },
-                ensure_ascii=False,
-                indent=2,
-            ),
-            encoding="utf-8",
-        )
+        if not meta_path.exists():  # 首见来源优先,镜像/转载不覆盖来源记录
+            meta_path.write_text(
+                json.dumps(
+                    {
+                        "url": snapshot.url,
+                        "fetched_at": snapshot.fetched_at.isoformat(),
+                        "status_code": snapshot.status_code,
+                        "content_type": snapshot.content_type,
+                        "sha256": snapshot.sha256,
+                        "title": title,
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
         return body_path
 
     def path_of(self, sha256: str) -> Path:
