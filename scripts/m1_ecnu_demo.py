@@ -60,6 +60,7 @@ def phase1_live_fetch() -> None:
             print(f"[降级] {name}: {outcome.error}")
     if parsed_texts:
         _phase1b_auto_extract(parsed_texts)
+        _phase1c_llm_structuring(parsed_texts)
     else:
         print("(全部抓取失败:本次仅演示种子数据判定,证据哈希采用种子文件内2026-11-05记录)")
 
@@ -77,6 +78,28 @@ def _phase1b_auto_extract(parsed_texts: dict[str, str]) -> None:
     if exact_ends:
         verdict = "一致 ✓" if max(exact_ends) == seed_end else "不一致 ✗(以种子为准,启发式需复核)"
         print(f"  交叉验证: 提取截止 max={max(exact_ends)} vs 种子={seed_end} → {verdict}")
+
+
+def _phase1c_llm_structuring(parsed_texts: dict[str, str]) -> None:
+    section("①c LLM条款结构化(发布门禁:可构建+quote逐字回溯)")
+    from yantu.llm import load_client
+
+    client = load_client(ROOT / "config" / "llm.json")
+    if client is None:
+        print("  未检测到有效 config/llm.json → 跳过LLM结构化(确定性基线不受影响)")
+        print("  配置: 复制 config/llm.example.json 为 config/llm.json,填 api_key(该文件不入库)")
+        return
+    from yantu.acquisition import StructuringAgent
+
+    r = StructuringAgent(client=client).structure(parsed_texts.get("软院考核细则", ""))
+    print(f"  状态={r.status} 尝试={r.attempts} 提示词={r.prompt_version}")
+    for c in r.gate_report:
+        print(f"  [{'✓' if c.passed else '✗'}] {c.name}: {c.detail or '通过'}")
+    if r.conditions_spec:
+        s = json.dumps(r.conditions_spec, ensure_ascii=False)
+        print(f"  条件树: {s[:200]}…")
+    for n in r.notes:
+        print(f"  注: {n}")
 
 
 def load_opportunities() -> list[Opportunity]:

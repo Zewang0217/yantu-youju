@@ -1,0 +1,9 @@
+{
+  "_comment": "复制本文件为 config/llm.json 并填入真实 key;config/llm.json 已被 .gitignore 排除,不会进入公开仓库。支持任何 OpenAI 兼容 /chat/completions 端点。",
+  "provider": "bigmodel",
+  "base_url": "https://open.bigmodel.cn/api/paas/v4",
+  "api_key": "在这里填入你的API Key",
+  "model": "glm-4.6",
+  "timeout_seconds": 60,
+  "max_tokens": 4096
+}

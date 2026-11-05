@@ -26,6 +26,7 @@ from .store import (
     record_to_opportunity,
 )
 from .structurer import WindowCandidate, extract_window_candidates, merge_deadline
+from .structuring_agent import StructuringAgent, StructuringResult
 from .text_dates import DatetimeHit, find_datetimes
 
 __all__ = [
@@ -38,4 +39,5 @@ __all__ = [
     "HarvestService", "HarvestOutcome",
     "find_datetimes", "DatetimeHit",
     "WindowCandidate", "extract_window_candidates", "merge_deadline",
+    "StructuringAgent", "StructuringResult",
 ]

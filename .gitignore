@@ -25,3 +25,6 @@ build/
 
 # —— 运行时产物(快照/入口库/机会库,demo写入) ——
 /var/
+
+# —— 密钥(模板 config/llm.example.json 可入库,真实配置不入库) ——
+/config/llm.json
