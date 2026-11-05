@@ -11,3 +11,14 @@ Thumbs.db
 ~$*
 *.tmp
 *.log
+
+# —— Python(M1内核开发) ——
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.coverage
