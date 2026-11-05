@@ -99,7 +99,8 @@ status: '材料进度记录，Codex同步；勾选表示对应草稿/审阅材�
 - [x] M1开工(2026-11-05):工程骨架(pyproject/src布局)+领域内核`src/yantu`(models/conditions/eligibility/ranking);**18项单测全绿**(`PYTHONPATH=src python -m unittest discover -s tests`),覆盖SRS§4 OR替代、T01~T04、T08多入口、REC-10排序排除与INV-13降级语义;排序权重为待校准初版
 - [x] 内核HLD设计审查与抽象决策(`09_开发与交付/M1阶段-内核HLD设计审查与建议抽象.md`):F1注册表+编解码/F2 NullObject/F3排序Strategy等6项落地,4项明确不抽象
 - [x] subagent全量review与处置(2026-11-05):P0×1(undergrad_c9缺失误杀)/P1×5(空组/单边界窗口/required语义/注册别名/证据主键)全修,高价值P2同批;**53项单测全绿**;推迟项记录在决策文档§8
-- [ ] M1续:华东师大软院真实通知接入(入口/快照/解析/结构化,按F7协议)打穿端到端(软件工程专业 + 首批院校),再扩大覆盖
+- [x] M1续开工(2026-11-05):采集模块按F7协议(fetcher不可变快照+HTML解析器+解析状态四态),63项单测全绿;**真抓3页ECNU官方通知成功**(软院预报名/考核细则/CS细则,complete,哈希入证);人工种子数据`data/pilot/ecnu_2027_seed.json`(真实截止2026-09-07 12:00/考核权重40-40-20入模);端到端demo`scripts/m1_ecnu_demo.py`跑通判定/排序/排除/证据链
+- [ ] M1余项:条款自动结构化(LLM采集Agent+复核门禁)、软院预报名图片正文/附件解析(G8实证)、首批其余4校接入、快照落盘存储(Repository)
 - [ ] 持续测试;实现变化同步回写需求与设计文档
 
 ## 阶段 8:试用与交付 ⬜

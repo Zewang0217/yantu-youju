@@ -1,0 +1,111 @@
+{
+  "_meta": {
+    "name": "华东师大2027试点种子数据(人工结构化)",
+    "disclaimer": "本文件为M1人工结构化种子数据(试点金标),非自动解析输出;条款与时间以引用原文为准,自动结构化属后续采集Agent任务并需过复核门禁(ACQ-05/06)",
+    "curated_by": "ZCode(AI助手),依据2026-11-05实时抓取的官方页面与《代表性院校推免政策核验_建模覆盖度》§2.6",
+    "snapshots_2026_11_05": {
+      "ev-sei-notice": "sha256=250b99e0684c…(软院预报名通知,26599B)",
+      "ev-sei-rules": "sha256=838cfee6fc…(软院考核细则,48953B)",
+      "ev-cs-rules": "sha256=480c81b213…(CS考核细则,22229B)"
+    },
+    "known_limits": [
+      "软院预报名页正文主体在图片/附件中,机器可读文本仅导航与标题(G8载体缺口实证);截止时间取自考核细则页正文",
+      "CS夏令营的窗口起止未在核验报告中获得,窗口置null(未知截止不擅自视为开放,REC-10)"
+    ]
+  },
+  "opportunities": [
+    {
+      "oid": "ecnu-sei-2027-preapply",
+      "school": "华东师范大学",
+      "department": "软件工程学院(滴水湖国际软件学院)",
+      "program": "软件工程",
+      "batch": "预报名(预推免)",
+      "entry_year": 2027,
+      "degree_type": "专硕(另有学硕/直博,拆分机会)",
+      "windows": [
+        {"entry_name": "学校报考系统(yjszs-ks.ecnu.edu.cn)", "required": true, "start": null, "end": "2026-09-07T12:00:00"}
+      ],
+      "conditions_spec": {
+        "type": "and",
+        "label": "软院预报名条件",
+        "conditions": [
+          {
+            "type": "unstructured",
+            "label": "本科推免资格及基本报名条件",
+            "quote": "我院将组织专家对推免生的材料进行审核，根据材料审核成绩由高到低择…(身心健康,符合国家规定的体检要求等)",
+            "located_at": "考核细则 三(一)/一",
+            "reason": "资格类条款未结构化:以校方推荐名单与材料审核为准,不自动判定"
+          }
+        ]
+      },
+      "priorities_spec": [
+        {
+          "type": "priority",
+          "label": "六级/雅思/托福成绩者优先(非门槛)",
+          "condition": {
+            "type": "or",
+            "label": "英语优先项",
+            "conditions": [{"type": "has_cet6"}, {"type": "ielts_at_least"}]
+          }
+        }
+      ],
+      "evidence": [
+        {
+          "eid": "ev-sei-notice",
+          "source_name": "软院2027预报名通知",
+          "url": "https://sei.ecnu.edu.cn/c4/0d/c33171a771085/page.htm",
+          "quote": "标题:…2027年接收优秀应届本科毕业生免试攻读研究生（含本科直博）预报名通知(正文主体在附件/图片)",
+          "located_at": "页面标题",
+          "version_time": "2026-07-24"
+        },
+        {
+          "eid": "ev-sei-deadline",
+          "source_name": "软院2027综合考核实施细则",
+          "url": "https://sei.ecnu.edu.cn/d7/c3/c33171a776131/page.htm",
+          "quote": "学院推免预报名截止时间为：2026年9月7日中午12:00",
+          "located_at": "三、(二)报名截止时间",
+          "version_time": "2026-09-11"
+        },
+        {
+          "eid": "ev-sei-assessment",
+          "source_name": "软院2027综合考核实施细则",
+          "url": "https://sei.ecnu.edu.cn/d7/c3/c33171a776131/page.htm",
+          "quote": "综合考核总成绩=专业素质成绩×40%+综合能力成绩×40%+外语能力成绩×20%。面试前进行编程能力考察，时长90分钟，考察结果不计入综合考核成绩",
+          "located_at": "四、综合考核",
+          "version_time": "2026-09-11"
+        }
+      ]
+    },
+    {
+      "oid": "ecnu-cs-2026-summercamp",
+      "school": "华东师范大学",
+      "department": "计算机科学与技术学院",
+      "program": "计算机技术(专硕)/计算机科学与技术",
+      "batch": "夏令营(第十四届云计算与大数据)",
+      "entry_year": 2027,
+      "degree_type": "专硕",
+      "windows": [
+        {"entry_name": "夏令营报名系统", "required": true, "start": null, "end": null}
+      ],
+      "conditions_spec": {
+        "type": "and",
+        "label": "CS夏令营条件",
+        "conditions": [
+          {"type": "cet6_at_least", "threshold": 425, "label": "CET-6(硬性)"},
+          {"type": "ranking_at_most", "threshold": 20.0, "label": "前三年年级总排名前20%"}
+        ]
+      },
+      "priorities_spec": [],
+      "evidence": [
+        {
+          "eid": "ev-cs-rules",
+          "source_name": "CS 2027综合考核实施细则",
+          "url": "https://cs.ecnu.edu.cn/d7/bf/c33066a776127/page.htm",
+          "quote": "标题:计算机科学与技术学院2027年推免生综合考核实施细则(六级硬性/排名前20%见夏令营通知,细则正文在附件)",
+          "located_at": "页面标题;条件依据核验报告§2.6",
+          "version_time": "2026-09-11"
+        }
+      ]
+    }
+  ]
+}
