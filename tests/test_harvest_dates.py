@@ -75,7 +75,7 @@ class TestHarvestService(unittest.TestCase):
         self.assertFalse(any(self.store.path_of(out.sha256).exists() for _ in [0]))  # 无快照
 
     def test_collect_unsupported_carrier(self):
-        svc = HarvestService(self.store, self.book, fetch_fn=lambda url: _snap(b"PDF", ctype="application/pdf"))
+        svc = HarvestService(self.store, self.book, fetch_fn=lambda url: _snap(b"TIFF", ctype="image/tiff"))
         out = svc.collect("https://x.edu.cn/a.pdf", name="附件")
         self.assertTrue(out.ok)  # 抓取成功
         self.assertEqual(out.parse_result.status, ParseStatus.UNSUPPORTED)  # 解析层如实降级

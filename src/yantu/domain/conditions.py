@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 
 from .models import Condition, StudentProfile, Verdict
@@ -20,6 +20,7 @@ class _ThresholdCondition(Condition):
 
     threshold: float
     label: str = ""
+    evidence_refs: tuple[str, ...] = field(default=(), kw_only=True)
 
     def evaluate(self, profile: StudentProfile) -> Verdict:
         value = self._value(profile)
@@ -70,6 +71,7 @@ class ResearchHighlight(Condition):
     """科研突出(作为放宽条款的触发条件时使用)。"""
 
     label: str = "科研突出"
+    evidence_refs: tuple[str, ...] = field(default=(), kw_only=True)
 
     def evaluate(self, profile: StudentProfile) -> Verdict:
         if profile.research_highlight is None:
@@ -82,6 +84,7 @@ class IsC9(Condition):
     """确定性放宽触发:本科为C9。未提供(None)→unknown,不默认非C9(P0修复)。"""
 
     label: str = "C9高校"
+    evidence_refs: tuple[str, ...] = field(default=(), kw_only=True)
 
     def evaluate(self, profile: StudentProfile) -> Verdict:
         if profile.undergrad_c9 is None:
@@ -96,6 +99,7 @@ class HasCet6(Condition):
 
     label: str = "已通过CET-6"
     threshold: int = 425
+    evidence_refs: tuple[str, ...] = field(default=(), kw_only=True)
 
     def evaluate(self, profile: StudentProfile) -> Verdict:
         if profile.cet6 is None:
@@ -112,6 +116,7 @@ class UnstructuredCondition(Condition):
     """
 
     label: str = "条款未完成结构化"
+    evidence_refs: tuple[str, ...] = field(default=(), kw_only=True)
     quote: str = ""  # 原文片段
     located_at: str = ""  # 定位(页/段/表格)
     reason: str = ""  # 未结构化原因(未知类型/载体不可读/冲突待裁)

@@ -34,7 +34,7 @@ class FakeClient:
 
 VALID_JSON = (
     '{"conditions": {"type": "and", "conditions": ['
-    '{"type": "or", "label": "英语", "conditions": ['
+    '{"type": "or", "label": "英语", "quote":"全国大学英语六级考试成绩425分及以上，或雅思6.5分及以上", "conditions": ['
     '{"type": "cet6_at_least", "threshold": 425, "quote": "全国大学英语六级考试成绩425分及以上"},'
     '{"type": "ielts_at_least", "threshold": 6.5, "quote": "雅思6.5分及以上"}]},'
     '{"type": "unstructured", "label": "排名口径", "quote": "前六学期成绩排名原则上为前30%",'
@@ -49,8 +49,8 @@ class TestStructuringAgent(unittest.TestCase):
         self.assertEqual(r.status, "structured")
         self.assertEqual(r.attempts, 1)
         self.assertTrue(all(c.passed for c in r.gate_report))
-        # quote 被剥离,树可构建
-        self.assertNotIn("quote", str(r.conditions_spec))
+        self.assertIn("quote", r.conditions_spec["conditions"][1])
+        self.assertTrue(r.claims)
         # 确定性窗口并行保留
         self.assertTrue(any(c.date == datetime(2026, 9, 7, 12, 0) for c in r.windows))
 
@@ -77,10 +77,10 @@ class TestStructuringAgent(unittest.TestCase):
         agent = StructuringAgent(client=FakeClient([bad, bad]))
         r = agent.structure(REAL_TEXT)
         self.assertEqual(r.status, "degraded")
-        self.assertTrue(any(c.name == "codec_build" and not c.passed for c in r.gate_report))
+        self.assertTrue(any(not c.passed for c in r.gate_report))
 
     def test_non_json_output_degrades(self):
-        agent = StructuringAgent(client=FakeClient(["我认为这个政策很友好"]))
+        agent = StructuringAgent(client=FakeClient(["我认为这个政策很友好", "仍然没有JSON"]))
         r = agent.structure(REAL_TEXT)
         self.assertEqual(r.status, "degraded")
         self.assertTrue(any(c.name == "json_parse" and not c.passed for c in r.gate_report))

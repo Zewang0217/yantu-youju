@@ -60,7 +60,6 @@ class Condition(ABC):
     (ACQ-05:每项结论关联支持证据)。
     """
 
-    label: str
     evidence_refs: tuple[str, ...] = ()
 
     @abstractmethod
@@ -78,6 +77,7 @@ class AndGroup(Condition):
 
     conditions: tuple[Condition, ...]
     label: str = "必要条件(全部满足)"
+    evidence_refs: tuple[str, ...] = field(default=(), kw_only=True)
 
     def __post_init__(self) -> None:
         if not self.conditions:
@@ -102,6 +102,7 @@ class OrGroup(Condition):
 
     conditions: tuple[Condition, ...]
     label: str = "替代条件(满足其一)"
+    evidence_refs: tuple[str, ...] = field(default=(), kw_only=True)
 
     def __post_init__(self) -> None:
         if not self.conditions:
@@ -129,6 +130,7 @@ class ReliefClause(Condition):
     relief_condition: Condition
     discretionary: bool = True
     label: str = "放宽条款"
+    evidence_refs: tuple[str, ...] = field(default=(), kw_only=True)
 
     def evaluate(self, profile: StudentProfile) -> Verdict:
         base_verdict = self.base.evaluate(profile)
@@ -183,6 +185,10 @@ class Evidence:
     located_at: str = ""  # 定位(页/段/表格)
     version_time: Optional[datetime] = None  # 文档版本时间
     verified_at: Optional[datetime] = None  # 最近成功复核时间
+    snapshot_sha256: str = ""
+    text_sha256: str = ""
+    start_offset: Optional[int] = None
+    end_offset: Optional[int] = None
 
 
 @dataclass

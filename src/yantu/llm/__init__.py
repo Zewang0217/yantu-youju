@@ -5,6 +5,6 @@
 基线/降级,不假装调用了模型。
 """
 
-from .client import ChatClient, LLMError, load_client
+from .client import ChatClient, ChatResult, LLMError, ProviderUsage, load_client
 
-__all__ = ["ChatClient", "LLMError", "load_client"]
+__all__ = ["ChatClient", "ChatResult", "LLMError", "ProviderUsage", "load_client"]

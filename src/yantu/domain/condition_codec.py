@@ -97,15 +97,18 @@ def build(spec: dict[str, Any]) -> Condition:
     """dict → Condition 树。组合器递归;叶子按注册表实例化,多余键交给类构造
     (未知参数由 dataclass 抛 TypeError,属于数据错误而非降级场景)。"""
     type_name = spec.get("type")
+    refs = tuple(spec.get("evidence_refs", ()))
     if type_name == _AND:
         return AndGroup(
             tuple(build(c) for c in _require(spec, "conditions", _AND)),
             label=spec.get("label", "必要条件(全部满足)"),
+            evidence_refs=refs,
         )
     if type_name == _OR:
         return OrGroup(
             tuple(build(c) for c in _require(spec, "conditions", _OR)),
             label=spec.get("label", "替代条件(满足其一)"),
+            evidence_refs=refs,
         )
     if type_name == _RELIEF:
         return ReliefClause(
@@ -113,14 +116,19 @@ def build(spec: dict[str, Any]) -> Condition:
             relief_condition=build(_require(spec, "relief", _RELIEF)),
             discretionary=spec.get("discretionary", True),
             label=spec.get("label", "放宽条款"),
+            evidence_refs=refs,
         )
     if type_name == _UNSTRUCTURED:
         params = {k: v for k, v in spec.items() if k != "type"}
+        if "evidence_refs" in params:
+            params["evidence_refs"] = refs
         return UnstructuredCondition(**params)
     cls = _CONDITION_TYPES.get(type_name)
     if cls is None:
         raise UnknownConditionTypeError(type_name)
     params = {k: v for k, v in spec.items() if k != "type"}
+    if "evidence_refs" in params:
+        params["evidence_refs"] = refs
     return cls(**params)
 
 
@@ -146,12 +154,14 @@ def spec(cond: Condition) -> dict[str, Any]:
             "type": _AND,
             "conditions": [spec(c) for c in cond.conditions],
             "label": cond.label,
+            "evidence_refs": cond.evidence_refs,
         }
     if isinstance(cond, OrGroup):
         return {
             "type": _OR,
             "conditions": [spec(c) for c in cond.conditions],
             "label": cond.label,
+            "evidence_refs": cond.evidence_refs,
         }
     if isinstance(cond, ReliefClause):
         return {
@@ -160,6 +170,7 @@ def spec(cond: Condition) -> dict[str, Any]:
             "relief": spec(cond.relief_condition),
             "discretionary": cond.discretionary,
             "label": cond.label,
+            "evidence_refs": cond.evidence_refs,
         }
     name = _reverse_lookup(type(cond))
     payload = {f.name: getattr(cond, f.name) for f in dataclasses.fields(cond)}

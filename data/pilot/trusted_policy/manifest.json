@@ -1,0 +1,837 @@
+{
+  "author": "Codex（AI助手）",
+  "created": "2026-11-05",
+  "updated": "2026-11-05",
+  "version": "policy-regression-v1",
+  "status": "离线回归种子；AI预标注待人工终审，不是模型质量金标或全网效果实验",
+  "sources": {
+    "synthetic": {
+      "html": "synthetic_notice.html",
+      "url": "https://fixture.invalid/notice",
+      "fetchedAt": "2026-08-02T10:00:00",
+      "scope": {
+        "oid": "synthetic-software-2027",
+        "school": "合成测试大学",
+        "department": "计算机学院",
+        "program": "085405-01 软件工程",
+        "batch": "预报名",
+        "entry_year": 2027,
+        "degree_type": "专业学位",
+        "source_url": "https://fixture.invalid/notice",
+        "allowed_host": "fixture.invalid"
+      },
+      "provenance": "synthetic"
+    },
+    "ecnu": {
+      "html": "ecnu_rules.html",
+      "metadata": "ecnu_rules_source.json",
+      "scope": {
+        "oid": "ecnu-sei-085405-01-2027-preapply",
+        "school": "华东师范大学",
+        "department": "软件工程学院",
+        "program": "085405-01 软件工程",
+        "batch": "预报名",
+        "entry_year": 2027,
+        "degree_type": "专业学位",
+        "source_url": "https://sei.ecnu.edu.cn/d7/c3/c33171a776131/page.htm",
+        "allowed_host": "sei.ecnu.edu.cn"
+      },
+      "provenance": "captured_official_snapshot"
+    }
+  },
+  "cases": [
+    {
+      "id": "positive_automatic_publish",
+      "category": "typical",
+      "suite": "regression",
+      "split": "development",
+      "source": "synthetic",
+      "extractor": "fixture_draft",
+      "draft": {
+        "conditions": {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "cet6_at_least",
+              "threshold": 425,
+              "quote": "CET-6成绩425分及以上"
+            },
+            {
+              "type": "ranking_at_most",
+              "threshold": 20,
+              "quote": "排名前20%"
+            }
+          ]
+        }
+      },
+      "profile": {
+        "cet6": 500,
+        "ranking_percent": 10
+      },
+      "asOf": "2026-08-15T12:00:00",
+      "expected": {
+        "status": "published",
+        "eligibility": "pass",
+        "opening": "open",
+        "included": true
+      },
+      "annotationStatus": "AI-authored-pending-human"
+    },
+    {
+      "id": "hard_eligibility_fail",
+      "category": "typical",
+      "suite": "regression",
+      "split": "development",
+      "source": "synthetic",
+      "extractor": "fixture_draft",
+      "draft": {
+        "conditions": {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "cet6_at_least",
+              "threshold": 425,
+              "quote": "CET-6成绩425分及以上"
+            },
+            {
+              "type": "ranking_at_most",
+              "threshold": 20,
+              "quote": "排名前20%"
+            }
+          ]
+        }
+      },
+      "profile": {
+        "cet6": 400,
+        "ranking_percent": 10
+      },
+      "asOf": "2026-08-15T12:00:00",
+      "expected": {
+        "status": "published",
+        "eligibility": "fail",
+        "opening": "open",
+        "included": false
+      },
+      "annotationStatus": "AI-authored-pending-human"
+    },
+    {
+      "id": "missing_profile_unknown",
+      "category": "typical",
+      "suite": "regression",
+      "split": "development",
+      "source": "synthetic",
+      "extractor": "fixture_draft",
+      "draft": {
+        "conditions": {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "cet6_at_least",
+              "threshold": 425,
+              "quote": "CET-6成绩425分及以上"
+            },
+            {
+              "type": "ranking_at_most",
+              "threshold": 20,
+              "quote": "排名前20%"
+            }
+          ]
+        }
+      },
+      "profile": {
+        "ranking_percent": 10
+      },
+      "asOf": "2026-08-15T12:00:00",
+      "expected": {
+        "status": "published",
+        "eligibility": "unknown",
+        "opening": "open",
+        "included": true
+      },
+      "annotationStatus": "AI-authored-pending-human"
+    },
+    {
+      "id": "missing_quote",
+      "category": "adversarial",
+      "suite": "regression",
+      "split": "development",
+      "source": "synthetic",
+      "extractor": "fixture_draft",
+      "draft": {
+        "conditions": {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "cet6_at_least",
+              "threshold": 425
+            },
+            {
+              "type": "ranking_at_most",
+              "threshold": 20,
+              "quote": "排名前20%"
+            }
+          ]
+        }
+      },
+      "profile": {
+        "cet6": 500,
+        "ranking_percent": 10
+      },
+      "asOf": "2026-08-15T12:00:00",
+      "expected": {
+        "status": "quarantined"
+      },
+      "annotationStatus": "AI-authored-pending-human"
+    },
+    {
+      "id": "wrong_threshold_real_quote",
+      "category": "adversarial",
+      "suite": "regression",
+      "split": "development",
+      "source": "synthetic",
+      "extractor": "fixture_draft",
+      "draft": {
+        "conditions": {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "cet6_at_least",
+              "threshold": 425,
+              "quote": "CET-6成绩425分及以上"
+            },
+            {
+              "type": "ranking_at_most",
+              "threshold": 10,
+              "quote": "排名前20%"
+            }
+          ]
+        }
+      },
+      "profile": {
+        "cet6": 500,
+        "ranking_percent": 10
+      },
+      "asOf": "2026-08-15T12:00:00",
+      "expected": {
+        "status": "quarantined"
+      },
+      "annotationStatus": "AI-authored-pending-human"
+    },
+    {
+      "id": "omitted_application_clause",
+      "category": "adversarial",
+      "suite": "regression",
+      "split": "development",
+      "source": "synthetic",
+      "extractor": "fixture_draft",
+      "draft": {
+        "conditions": {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "cet6_at_least",
+              "threshold": 425,
+              "quote": "CET-6成绩425分及以上"
+            }
+          ]
+        }
+      },
+      "profile": {
+        "cet6": 500,
+        "ranking_percent": 10
+      },
+      "asOf": "2026-08-15T12:00:00",
+      "expected": {
+        "status": "quarantined"
+      },
+      "annotationStatus": "AI-authored-pending-human"
+    },
+    {
+      "id": "future_obligation_misclassified",
+      "category": "adversarial",
+      "suite": "regression",
+      "split": "development",
+      "source": "synthetic",
+      "extractor": "fixture_draft",
+      "draft": {
+        "conditions": {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "cet6_at_least",
+              "threshold": 425,
+              "quote": "CET-6成绩425分及以上"
+            },
+            {
+              "type": "ranking_at_most",
+              "threshold": 20,
+              "quote": "排名前20%"
+            },
+            {
+              "type": "unstructured",
+              "quote": "综合考核总成绩60分及以上为合格",
+              "label": "未来考核"
+            }
+          ]
+        }
+      },
+      "profile": {
+        "cet6": 500,
+        "ranking_percent": 10
+      },
+      "asOf": "2026-08-15T12:00:00",
+      "expected": {
+        "status": "quarantined"
+      },
+      "annotationStatus": "AI-authored-pending-human"
+    },
+    {
+      "id": "unknown_opening",
+      "category": "edge",
+      "suite": "regression",
+      "split": "development",
+      "source": "synthetic",
+      "extractor": "fixture_draft",
+      "draft": {
+        "conditions": {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "cet6_at_least",
+              "threshold": 425,
+              "quote": "CET-6成绩425分及以上"
+            },
+            {
+              "type": "ranking_at_most",
+              "threshold": 20,
+              "quote": "排名前20%"
+            }
+          ]
+        }
+      },
+      "profile": {
+        "cet6": 500,
+        "ranking_percent": 10
+      },
+      "asOf": "2026-08-15T12:00:00",
+      "expected": {
+        "status": "published_partial",
+        "eligibility": "pass",
+        "opening": "unknown",
+        "included": false
+      },
+      "annotationStatus": "AI-authored-pending-human",
+      "htmlReplace": [
+        "预报名开始时间为：2026年8月1日09:00；",
+        ""
+      ]
+    },
+    {
+      "id": "conflicting_deadlines",
+      "category": "edge",
+      "suite": "regression",
+      "split": "development",
+      "source": "synthetic",
+      "extractor": "fixture_draft",
+      "draft": {
+        "conditions": {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "cet6_at_least",
+              "threshold": 425,
+              "quote": "CET-6成绩425分及以上"
+            },
+            {
+              "type": "ranking_at_most",
+              "threshold": 20,
+              "quote": "排名前20%"
+            }
+          ]
+        }
+      },
+      "profile": {
+        "cet6": 500,
+        "ranking_percent": 10
+      },
+      "asOf": "2026-08-15T12:00:00",
+      "expected": {
+        "status": "quarantined"
+      },
+      "annotationStatus": "AI-authored-pending-human",
+      "htmlReplace": [
+        "四、综合考核",
+        "预报名截止时间为：2026年9月8日12:00。四、综合考核"
+      ]
+    },
+    {
+      "id": "wrong_entry_year",
+      "category": "adversarial",
+      "suite": "regression",
+      "split": "development",
+      "source": "synthetic",
+      "extractor": "fixture_draft",
+      "draft": {
+        "conditions": {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "cet6_at_least",
+              "threshold": 425,
+              "quote": "CET-6成绩425分及以上"
+            },
+            {
+              "type": "ranking_at_most",
+              "threshold": 20,
+              "quote": "排名前20%"
+            }
+          ]
+        }
+      },
+      "profile": {
+        "cet6": 500,
+        "ranking_percent": 10
+      },
+      "asOf": "2026-08-15T12:00:00",
+      "expected": {
+        "status": "quarantined"
+      },
+      "annotationStatus": "AI-authored-pending-human",
+      "scopeOverride": {
+        "entry_year": 2028
+      }
+    },
+    {
+      "id": "wrong_official_host",
+      "category": "adversarial",
+      "suite": "regression",
+      "split": "development",
+      "source": "synthetic",
+      "extractor": "fixture_draft",
+      "draft": {
+        "conditions": {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "cet6_at_least",
+              "threshold": 425,
+              "quote": "CET-6成绩425分及以上"
+            },
+            {
+              "type": "ranking_at_most",
+              "threshold": 20,
+              "quote": "排名前20%"
+            }
+          ]
+        }
+      },
+      "profile": {
+        "cet6": 500,
+        "ranking_percent": 10
+      },
+      "asOf": "2026-08-15T12:00:00",
+      "expected": {
+        "status": "quarantined"
+      },
+      "annotationStatus": "AI-authored-pending-human",
+      "scopeOverride": {
+        "allowed_host": "official.invalid"
+      }
+    },
+    {
+      "id": "english_alternative_pass",
+      "category": "typical",
+      "suite": "regression",
+      "split": "development",
+      "source": "synthetic",
+      "extractor": "fixture_draft",
+      "draft": {
+        "conditions": {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "or",
+              "quote": "CET-6成绩425分及以上，或雅思6.5分及以上",
+              "conditions": [
+                {
+                  "type": "cet6_at_least",
+                  "threshold": 425,
+                  "quote": "CET-6成绩425分及以上"
+                },
+                {
+                  "type": "ielts_at_least",
+                  "threshold": 6.5,
+                  "quote": "雅思6.5分及以上"
+                }
+              ]
+            },
+            {
+              "type": "ranking_at_most",
+              "threshold": 20,
+              "quote": "排名前20%"
+            }
+          ]
+        }
+      },
+      "profile": {
+        "cet6": 400,
+        "ielts": 7,
+        "ranking_percent": 10
+      },
+      "asOf": "2026-08-15T12:00:00",
+      "expected": {
+        "status": "published",
+        "eligibility": "pass",
+        "opening": "open",
+        "included": true
+      },
+      "annotationStatus": "AI-authored-pending-human",
+      "htmlReplace": [
+        "CET-6成绩425分及以上",
+        "CET-6成绩425分及以上，或雅思6.5分及以上"
+      ]
+    },
+    {
+      "id": "alternative_rewritten_as_and",
+      "category": "adversarial",
+      "suite": "regression",
+      "split": "development",
+      "source": "synthetic",
+      "extractor": "fixture_draft",
+      "draft": {
+        "conditions": {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "and",
+              "quote": "CET-6成绩425分及以上，或雅思6.5分及以上",
+              "conditions": [
+                {
+                  "type": "cet6_at_least",
+                  "threshold": 425,
+                  "quote": "CET-6成绩425分及以上"
+                },
+                {
+                  "type": "ielts_at_least",
+                  "threshold": 6.5,
+                  "quote": "雅思6.5分及以上"
+                }
+              ]
+            },
+            {
+              "type": "ranking_at_most",
+              "threshold": 20,
+              "quote": "排名前20%"
+            }
+          ]
+        }
+      },
+      "profile": {
+        "cet6": 500,
+        "ranking_percent": 10
+      },
+      "asOf": "2026-08-15T12:00:00",
+      "expected": {
+        "status": "quarantined"
+      },
+      "annotationStatus": "AI-authored-pending-human",
+      "htmlReplace": [
+        "CET-6成绩425分及以上",
+        "CET-6成绩425分及以上，或雅思6.5分及以上"
+      ]
+    },
+    {
+      "id": "qualitative_unknown",
+      "category": "edge",
+      "suite": "regression",
+      "split": "development",
+      "source": "synthetic",
+      "extractor": "fixture_draft",
+      "draft": {
+        "conditions": {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "cet6_at_least",
+              "threshold": 425,
+              "quote": "CET-6成绩425分及以上"
+            },
+            {
+              "type": "unstructured",
+              "quote": "学习成绩优异",
+              "label": "定性成绩要求"
+            }
+          ]
+        }
+      },
+      "profile": {
+        "cet6": 500,
+        "ranking_percent": 10
+      },
+      "asOf": "2026-08-15T12:00:00",
+      "expected": {
+        "status": "published_partial",
+        "eligibility": "unknown",
+        "opening": "open",
+        "included": true
+      },
+      "annotationStatus": "AI-authored-pending-human",
+      "htmlReplace": [
+        "排名前20%",
+        "学习成绩优异"
+      ]
+    },
+    {
+      "id": "actual_ecnu_source",
+      "category": "typical",
+      "suite": "regression",
+      "split": "development",
+      "source": "ecnu",
+      "extractor": "conservative",
+      "profile": {
+        "cet6": 500,
+        "ranking_percent": 10
+      },
+      "asOf": "2026-11-05T20:26:29.957217",
+      "expected": {
+        "status": "published_partial",
+        "eligibility": "unknown",
+        "opening": "closed",
+        "included": false
+      },
+      "annotationStatus": "AI-authored-pending-human"
+    },
+    {
+      "id": "parent_quote_cannot_hide_omission",
+      "category": "adversarial",
+      "suite": "regression",
+      "split": "development",
+      "source": "synthetic",
+      "extractor": "fixture_draft",
+      "draft": {
+        "conditions": {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "cet6_at_least",
+              "threshold": 425,
+              "quote": "CET-6成绩425分及以上"
+            }
+          ],
+          "quote": "CET-6成绩425分及以上。 2. 排名前20%"
+        }
+      },
+      "profile": {
+        "cet6": 500,
+        "ranking_percent": 10
+      },
+      "asOf": "2026-08-15T12:00:00",
+      "expected": {
+        "status": "quarantined"
+      },
+      "annotationStatus": "AI-authored-pending-human"
+    },
+    {
+      "id": "preamble_requirement_not_dropped",
+      "category": "adversarial",
+      "suite": "regression",
+      "split": "development",
+      "source": "synthetic",
+      "extractor": "fixture_draft",
+      "draft": {
+        "conditions": {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "cet6_at_least",
+              "threshold": 425,
+              "quote": "CET-6成绩425分及以上"
+            },
+            {
+              "type": "ranking_at_most",
+              "threshold": 20,
+              "quote": "排名前20%"
+            }
+          ]
+        }
+      },
+      "profile": {
+        "cet6": 500,
+        "ranking_percent": 10
+      },
+      "asOf": "2026-08-15T12:00:00",
+      "expected": {
+        "status": "quarantined"
+      },
+      "annotationStatus": "AI-authored-pending-human",
+      "htmlReplace": [
+        "二、报名条件",
+        "二、报名条件 申请人必须已取得推免资格。"
+      ]
+    },
+    {
+      "id": "second_required_entry_not_ignored",
+      "category": "adversarial",
+      "suite": "regression",
+      "split": "development",
+      "source": "synthetic",
+      "extractor": "fixture_draft",
+      "draft": {
+        "conditions": {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "cet6_at_least",
+              "threshold": 425,
+              "quote": "CET-6成绩425分及以上"
+            },
+            {
+              "type": "ranking_at_most",
+              "threshold": 20,
+              "quote": "排名前20%"
+            }
+          ]
+        }
+      },
+      "profile": {
+        "cet6": 500,
+        "ranking_percent": 10
+      },
+      "asOf": "2026-08-15T12:00:00",
+      "expected": {
+        "status": "quarantined"
+      },
+      "annotationStatus": "AI-authored-pending-human",
+      "htmlReplace": [
+        "四、综合考核",
+        "申请人须同时提交院系表单，表单截止时间为：2026年8月5日12:00。四、综合考核"
+      ]
+    },
+    {
+      "id": "unsupported_extra_deadline_not_ignored",
+      "category": "adversarial",
+      "suite": "regression",
+      "split": "development",
+      "source": "synthetic",
+      "extractor": "fixture_draft",
+      "draft": {
+        "conditions": {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "cet6_at_least",
+              "threshold": 425,
+              "quote": "CET-6成绩425分及以上"
+            },
+            {
+              "type": "ranking_at_most",
+              "threshold": 20,
+              "quote": "排名前20%"
+            }
+          ]
+        }
+      },
+      "profile": {
+        "cet6": 500,
+        "ranking_percent": 10
+      },
+      "asOf": "2026-08-15T12:00:00",
+      "expected": {
+        "status": "quarantined"
+      },
+      "annotationStatus": "AI-authored-pending-human",
+      "htmlReplace": [
+        "四、综合考核",
+        "表单截止时间为：2026年8月5日12:00。四、综合考核"
+      ]
+    },
+    {
+      "id": "model_label_not_trusted",
+      "category": "adversarial",
+      "suite": "regression",
+      "split": "development",
+      "source": "synthetic",
+      "extractor": "fixture_draft",
+      "draft": {
+        "conditions": {
+          "type": "and",
+          "conditions": [
+            {
+              "type": "cet6_at_least",
+              "threshold": 425,
+              "quote": "CET-6成绩425分及以上",
+              "label": "排名已达前1%"
+            },
+            {
+              "type": "ranking_at_most",
+              "threshold": 20,
+              "quote": "排名前20%"
+            }
+          ]
+        }
+      },
+      "profile": {
+        "cet6": 500,
+        "ranking_percent": 10
+      },
+      "asOf": "2026-08-15T12:00:00",
+      "expected": {
+        "status": "published",
+        "eligibility": "pass",
+        "opening": "open",
+        "included": true,
+        "firstLabel": "CET-6成绩425分及以上"
+      },
+      "annotationStatus": "AI-authored-pending-human"
+    },
+    {
+      "id": "numbered_requirements_cannot_be_regrouped",
+      "category": "adversarial",
+      "suite": "regression",
+      "split": "development",
+      "source": "synthetic",
+      "extractor": "fixture_draft",
+      "draft": {
+        "conditions": {
+          "type": "or",
+          "quote": "CET-6成绩425分及以上，或雅思6.5分及以上。 2. 排名前20%",
+          "conditions": [
+            {
+              "type": "cet6_at_least",
+              "threshold": 425,
+              "quote": "CET-6成绩425分及以上"
+            },
+            {
+              "type": "and",
+              "conditions": [
+                {
+                  "type": "ielts_at_least",
+                  "threshold": 6.5,
+                  "quote": "雅思6.5分及以上"
+                },
+                {
+                  "type": "ranking_at_most",
+                  "threshold": 20,
+                  "quote": "排名前20%"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "profile": {
+        "cet6": 500,
+        "ranking_percent": 50
+      },
+      "asOf": "2026-08-15T12:00:00",
+      "expected": {
+        "status": "quarantined"
+      },
+      "annotationStatus": "AI-authored-pending-human",
+      "htmlReplace": [
+        "CET-6成绩425分及以上",
+        "CET-6成绩425分及以上，或雅思6.5分及以上"
+      ]
+    }
+  ]
+}

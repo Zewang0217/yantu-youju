@@ -2,7 +2,8 @@
 
 层次:fetcher(快照) → parsers(注册表分发) → store(落盘三件套);
 harvest 为门面编排;structurer 为确定性窗口提取基线;
-text_dates 为统一日期解析。LLM 条款结构化(采集Agent)按 06 设计稿后续接入。
+text_dates 为统一日期解析；trusted_pipeline 负责单页证据绑定、独立门禁及
+publication 当前指针。多来源探索/交叉核验/咨询侧复核仍由后续工作流承担。
 """
 
 from .fetcher import FetchError, Snapshot, fetch
@@ -14,6 +15,8 @@ from .parsers import (
     ParseStatus,
     Parser,
     ParserRegistry,
+    PageText,
+    PdfTextParser,
     extract_dates,
     parse_snapshot,
 )
@@ -32,6 +35,7 @@ from .text_dates import DatetimeHit, find_datetimes
 __all__ = [
     "fetch", "Snapshot", "FetchError",
     "HtmlNoticeParser", "Parser", "ParserRegistry", "DEFAULT_REGISTRY",
+    "PageText", "PdfTextParser",
     "parse_snapshot", "extract_dates",
     "ParseResult", "ParseStatus",
     "SnapshotStore", "EntryBook", "EntryRecord", "OpportunityRepository",

@@ -1,17 +1,58 @@
 # 研途有据 —— 面向推免择校的可信决策 AI Agent
 
-> 推免个性化推荐系统 · 华为 ICT 创新赛参赛项目设计仓库
+> 推免个性化推荐系统 · 独立完整项目开发仓库；参赛材料保留
 
 面向有推免择校需求的学生,提供基于个人情况的院校与专业推荐:看懂申请条件、发现适合的机会、理解选择依据。产品由两条协作的 Agent 生产线组成:
 
 1. **资料生产线**:自动发现、获取、整理各院校推免政策资料,每条信息附来源 URL,经复核后结构化留存,并积累可跨年度复用的院校入口库;
 2. **咨询服务线**:通过对话构建用户画像,筛选候选并实时复核最新政策,输出带理由、带官方来源与待确认点的个性化推荐。
 
-当前处于**开发启动阶段**:设计包已经用户 2026-11-05 决策确认(独立开发模式,SRS §2 口径采纳、增强项纳入 MVP),M1 平台无关领域内核已开工。阶段进度与待办见 [TODO.md](TODO.md),执行顺序见[实施计划](D:/Zewang/newProject/ICT/AI文档/09_开发与交付/实施计划.md)。
+当前处于**领域内核与单页可信资料切片阶段**：自动提取产物已经过独立门禁、绑定原文证据、发布版本，再从库重载用于资格判断和排序。完整资料生产线、咨询服务线及界面仍待开发。用户2026-11-05要求先作为独立完整项目推进，**AgentArts延期，不阻塞开发**。
 
-2026-11-05进展:①六张UML补导出SVG(kroki校验通过);②M0并稿——[PRD v0.8](D:/Zewang/newProject/ICT/AI文档/05_需求分析/产品需求文档_PRD.md)(增强项进MVP)、[SRS v0.4](D:/Zewang/newProject/ICT/AI文档/05_需求分析/软件需求规格说明书_SRS.md)(REC-16~18诊断/比较/变化解释,T15~T17)、[交互与页面设计v0.2](D:/Zewang/newProject/ICT/AI文档/05_需求分析/交互与页面设计.md)(I8~I10);③M1领域内核 `src/yantu`(模型/条件类型/三值判定引擎/排序基线A),18项单测全绿,覆盖 SRS §4 替代语义与 T01~T04/T08 场景。平台集成(AgentArts)待用户按[验证清单](D:/Zewang/newProject/ICT/AI文档/08_测试与评估/AgentArts最小链路验证清单.md)实测后定。
+当前范围及下一张工作单见[开发现状与后续任务](AI文档/09_开发与交付/开发现状与后续任务_2026-11-05.md)；实际验证和限制见[单页可信发布回归报告](AI文档/08_测试与评估/单页可信发布回归报告_2026-11-05.md)。需求依据是[PRD v0.8](AI文档/05_需求分析/产品需求文档_PRD.md)及[SRS v0.5](AI文档/05_需求分析/软件需求规格说明书_SRS.md)。
 
-2026-10-30进展：已形成经三轮独立审阅的SRS，以及[系统架构](D:/Zewang/newProject/ICT/AI文档/06_架构设计/系统架构设计.md)、两套Agent协作、数据工具契约和[评估与改进设计](D:/Zewang/newProject/ICT/AI文档/08_测试与评估/评估与持续改进设计.md)。这是待团队审阅的候选设计包，未实现或实测。阅读顺序及验证边界见[本轮执行记录](D:/Zewang/newProject/ICT/AI文档/03_计划建议/SRS收敛与双Agent系统设计执行计划.md)。
+本地离线运行（Python 3.10+；内核/HTML无需第三方运行依赖，文本PDF使用可选`pdf`依赖组中的pypdf，缺失时明确报告unsupported）：
+
+```powershell
+$env:PYTHONPATH = 'src'
+New-Item -ItemType Directory -Force var/test_tmp | Out-Null
+$env:TMP = (Resolve-Path var/test_tmp).Path
+$env:TEMP = $env:TMP
+python -m unittest discover -s tests
+python scripts/trusted_policy_demo.py
+python scripts/evaluate_policy.py
+python scripts/collect_ecnu_documents.py
+```
+
+默认演示使用冻结官方快照、逐条保留定性原文，不读取旧人工种子或密钥。真实院校样例已截止且有条件未知；正常推荐正向路径由明确标注的合成资料验证。离线回归不代表新提示词的真实模型准确率。产物写入`var/`并被Git忽略。旧入口`python scripts/m1_ecnu_demo.py`转入同一可信演示。
+
+关联资料演示额外保存“考核细则→预报名HTML→嵌入PDF”的关系、页级文本及缺损，不合并不同阶段规则。`--live`显式访问白名单官网（拒绝重定向），默认冻结快照回放。1A解析与1B资料包均已通过独立review，状态查[步骤1B记录](AI文档/09_开发与交付/资料完整性步骤1B_HLD审查与改造.md)。
+
+1C1已补PDF日期精度/跨行时间与完整原文引用，独立R3全量207测试通过。对资料包运行`python scripts/inspect_registration_windows.py <运行目录>/bundle.json`生成逐文档时间字段与缺损报告，结果不会自动发布为机会事实。最新证据见[关联资料与PDF解析报告](AI文档/08_测试与评估/关联资料与PDF解析回归报告_2026-11-05.md)。
+
+2026-10-30进展：已形成经三轮独立审阅的SRS，以及[系统架构](AI文档/06_架构设计/系统架构设计.md)、两套Agent协作、数据工具契约和[评估与改进设计](AI文档/08_测试与评估/评估与持续改进设计.md)。这是待团队审阅的候选设计包，未实现或实测。阅读顺序及验证边界见[本轮执行记录](AI文档/03_计划建议/SRS收敛与双Agent系统设计执行计划.md)。
+
+1C2六组候选字段清单已完成修复与双路独立复核，252项测试及21例离线政策回归通过。运行`python scripts/inspect_policy_fields.py <运行目录>/bundle.json`离线校验源字节、重解析并生成候选字段、父节上下文及缺损；结果保持未发布，未裁定阶段/专业适用性。当前证据与下一步1C3边界见[字段清单修复与复核报告](AI文档/08_测试与评估/字段清单修复与复核报告_2026-11-06.md)。
+
+1C3已在声明的真实通知支持范围内完成阶段/专业核验及逐条款适用/不适用/未知判断：`python scripts/inspect_policy_applicability.py <运行目录>/bundle.json`，可选`--target <六轴JSON路径>`。真实P/H与原生专业表分别留证，327项测试、21例离线回归和双路独立复核通过；四项HLD复用改造已完成。最终目录、当前开放及发布门禁独立保留。证据、设计取舍与限制见[1C3完成报告](AI文档/08_测试与评估/1C3真实适用性与HLD回归报告_2026-11-06.md)。
+
+单机只读任务底座已接入离线资料核验，375项测试、21例离线回归及双路独立复核通过。任务数据库默认写入`var/task_runs/tasks.sqlite3`，不会调用正式发布库。可先提交，再在步骤检查点恢复：
+
+```powershell
+$policyTaskId = (python scripts/policy_tasks.py submit var/document_bundles/cf0a00deb6d24fa4807c573eeff9f663/bundle.json --key offline-example-2026-11-06 --calls 2 | ConvertFrom-Json).taskId
+python scripts/policy_tasks.py resume $policyTaskId --steps 1
+python scripts/policy_tasks.py resume $policyTaskId
+python scripts/policy_tasks.py show $policyTaskId
+python scripts/policy_tasks.py export $policyTaskId
+```
+
+submit可加`--target <JSON路径>`；相同key要求输入/目标/版本/预算一致。`list`查询任务概要，`cancel <taskId>`撤销非终态任务。退避任务持久化为retry_wait，不后台sleep或自行调度。产物、未知用量与发布边界见[预算与恢复报告](AI文档/08_测试与评估/任务底座预算与恢复回归报告_2026-11-06.md)。
+
+另有独立SQLite发布和一次性模型任务接口，分别复用单页核验门禁及供应商用量适配；模拟传输与单机事务边界见[2B记录](AI文档/09_开发与交付/任务发布与模型计量_2B_2026-11-06.md)。既有CLI和文件发布库尚未切换，真实模型调用未在本轮执行。
+
+已有文件发布库可以显式迁移到SQLite，并用只读命令核验当前记录；执行方式、源库停写要求和快照边界见[迁移与读侧接线](AI文档/09_开发与交付/发布库迁移与只读接线_2026-11-06.md)。默认演示仍读取文件库，`python scripts/trusted_policy_demo.py --store sqlite` 可运行隔离SQLite演示。
+
+任务账本支持显式给一层子任务发放共享额度；取消、截止和未知用量处理见[单层子任务配额](AI文档/09_开发与交付/单层子任务配额_2026-11-06.md)。该接口尚未接入默认资料工作流。
 
 ## 仓库结构
 
@@ -29,10 +70,10 @@
 | `AI文档/07_详细设计` | 数据完整性、工具契约、日志/错误及证据版本图 |
 | `AI文档/08_测试与评估` | 金标、指标、算法对比、judge/人工、改进闭环、AgentArts验证清单及审阅记录 |
 | `AI文档/09_开发与交付` | 实施计划(M0–M6里程碑) |
-| `src/` | 平台无关领域内核(M1):模型、条件类型、三值资格判定、排序基线A;采集模块(快照/解析/落盘/结构化Agent);LLM客户端 |
+| `src/` | 平台无关领域内核、采集/可信发布切片、LLM草案角色及隔离回归runner |
 | `config/` | 模型配置:`llm.example.json`模板;真实`llm.json`含key已被gitignore排除 |
-| `tests/` | 领域内核与采集模块单元测试(SRS场景的可执行规格,不含真实网络) |
-| `data/pilot/` | 试点人工结构化种子数据(华东师大,金标种子;注明非自动解析) |
+| `tests/` | 领域、采集、发布与回归报告测试，不调用真实网络/模型 |
+| `data/pilot/` | 旧人工种子、原始模型输出、可信切片官方快照及合成回归参考；AI标注待人工终审 |
 | `scripts/` | 端到端演示脚本(M1:华东师大真实通知打穿) |
 | `AI文档/99_归档` | AI 历史稿,注明修订原因与替代关系 |
 
@@ -48,4 +89,4 @@
 - 含个人信息的原始材料(会议纪要、申报表等)仅保存在本地,不入库。
 
 ---
-*本文件由ZCode（AI助手）创建于2026-10-23；Codex 2026-10-30同步设计产物；ZCode 2026-11-05同步开发启动状态。*
+*本文件由ZCode（AI助手）创建于2026-10-23；Codex 2026-10-30同步设计产物；ZCode 2026-11-05同步开发启动；Codex同步可信切片、实际验证与独立项目范围。*

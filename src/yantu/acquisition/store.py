@@ -11,6 +11,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -62,23 +63,29 @@ class EntryBook:
         )
 
 
+class SnapshotStorageError(RuntimeError):
+    """快照缺失、内容损坏或不可读；禁止以其授权事实发布。"""
+
+
 class SnapshotStore:
-    """快照库:内容寻址 <sha256>.html + 同名 .meta.json;不覆盖历史。"""
+    """按内容寻址保存任意载体为.blob，兼容旧.html文件且不改写旧内容。"""
 
     def __init__(self, root: Path):
         self._root = Path(root)
 
     def save(self, snapshot, title: str = "") -> Path:
         self._root.mkdir(parents=True, exist_ok=True)
-        body_path = self._root / f"{snapshot.sha256}.html"
+        body_path = self.path_of(snapshot.sha256)
         if not body_path.exists():  # 内容寻址:已存在即同一内容
             body_path.write_bytes(snapshot.body)
+        self.read(snapshot.sha256)
         meta_path = self._root / f"{snapshot.sha256}.meta.json"
         if not meta_path.exists():  # 首见来源优先,镜像/转载不覆盖来源记录
             meta_path.write_text(
                 json.dumps(
                     {
                         "url": snapshot.url,
+                        "final_url": snapshot.final_url,
                         "fetched_at": snapshot.fetched_at.isoformat(),
                         "status_code": snapshot.status_code,
                         "content_type": snapshot.content_type,
@@ -92,8 +99,22 @@ class SnapshotStore:
             )
         return body_path
 
+    def read(self, sha256: str) -> bytes:
+        """读取并验证实际落盘内容；损坏不覆盖修复，需显式处理故障。"""
+        if len(sha256) != 64 or any(c not in "0123456789abcdef" for c in sha256):
+            raise SnapshotStorageError("非法快照引用")
+        try:
+            body = self.path_of(sha256).read_bytes()
+        except OSError as e:
+            raise SnapshotStorageError("快照不可读或已缺失") from e
+        if hashlib.sha256(body).hexdigest() != sha256:
+            raise SnapshotStorageError("快照内容摘要不匹配，停止发布/读取")
+        return body
+
     def path_of(self, sha256: str) -> Path:
-        return self._root / f"{sha256}.html"
+        current = self._root / f"{sha256}.blob"
+        legacy = self._root / f"{sha256}.html"
+        return legacy if not current.exists() and legacy.exists() else current
 
 
 # —— 机会记录与领域对象互转(demo 与未来采集Agent共用) ——
@@ -123,6 +144,10 @@ def opportunity_to_record(op: Opportunity) -> dict:
                 **asdict(e),
                 "version_time": e.version_time.isoformat() if e.version_time else None,
                 "verified_at": e.verified_at.isoformat() if e.verified_at else None,
+                "snapshot_sha256": e.snapshot_sha256,
+                "text_sha256": e.text_sha256,
+                "start_offset": e.start_offset,
+                "end_offset": e.end_offset,
             }
             for e in op.evidence
         ],
@@ -164,6 +189,10 @@ def record_to_opportunity(rec: dict) -> Opportunity:
                 verified_at=datetime.fromisoformat(e["verified_at"])
                 if e.get("verified_at")
                 else None,
+                snapshot_sha256=e.get("snapshot_sha256", ""),
+                text_sha256=e.get("text_sha256", ""),
+                start_offset=e.get("start_offset"),
+                end_offset=e.get("end_offset"),
             )
             for e in rec.get("evidence", [])
         ),

@@ -72,7 +72,7 @@ class TestHtmlNoticeParser(unittest.TestCase):
 
     def test_non_html_unsupported_by_dispatcher(self):
         """R1:载体分发由 parse_snapshot 决定;无解析器→UNSUPPORTED。"""
-        r = parse_snapshot(make_snapshot(b"%PDF-1.7", "application/pdf"))
+        r = parse_snapshot(make_snapshot(b"unknown binary", "image/tiff"))
         self.assertEqual(r.status, ParseStatus.UNSUPPORTED)
         self.assertTrue(any("载体" in n for n in r.notes))
 

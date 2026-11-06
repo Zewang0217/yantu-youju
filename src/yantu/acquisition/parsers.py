@@ -7,39 +7,15 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
-from typing import Optional, Protocol
+from typing import Optional
 
 from .fetcher import Snapshot
-from .text_dates import find_datetimes
-
-
-class ParseStatus(str, Enum):
-    """SRS §4 解析状态:complete/partial/unsupported/failed。"""
-
-    COMPLETE = "complete"
-    PARTIAL = "partial"
-    UNSUPPORTED = "unsupported"
-    FAILED = "failed"
-
-
-@dataclass
-class ParseResult:
-    status: ParseStatus
-    title: str = ""
-    text: str = ""
-    dates: list[datetime] = field(default_factory=list)
-    notes: list[str] = field(default_factory=list)
-
-
-class Parser(Protocol):
-    """F7 协议:按载体声明能力,parse 假定载体已由分发器确认。"""
-
-    def supports(self, carrier: str) -> bool: ...
-
-    def parse(self, snapshot: Snapshot) -> ParseResult: ...
+from .text_dates import extract_dates
+from .html_links import discover_document_links
+from .html_text import decode_html, html_title
+from .parse_models import ParseStatus, PageText, ParseResult, Parser
+from .pdf_parser import PdfTextParser
 
 
 class ParserRegistry:
@@ -58,11 +34,6 @@ class ParserRegistry:
         return None
 
 
-def extract_dates(text: str) -> list[datetime]:
-    """日期候选(R2:委托 text_dates,保留旧签名)。"""
-    return sorted({h.dt for h in find_datetimes(text)})
-
-
 class HtmlNoticeParser:
     """HTML 通知页解析:标题+去标签正文(导航净化 R4)+日期候选。
 
@@ -72,13 +43,17 @@ class HtmlNoticeParser:
     def supports(self, carrier: str) -> bool:
         return carrier in ("text/html", "application/xhtml+xml")
 
+    def manifest(self) -> dict:
+        """声明本次算法版本；正文视图与全页文本是不同定位坐标。"""
+        return {"identity": "html-notice", "version": "3-unique-title", "configuration": {}, "configurationStatus": "reported"}
+
     def parse(self, snapshot: Snapshot) -> ParseResult:
         try:
-            html = self._decode(snapshot.body)
+            html = decode_html(snapshot.body)
         except UnicodeDecodeError as e:
             return ParseResult(ParseStatus.FAILED, notes=[f"解码失败: {e}"])
 
-        title = self._title(html)
+        title = html_title(html)
         text = self._strip_tags(html)
         text = self._cut_navigation(text, title)
         dates = extract_dates(text)
@@ -91,33 +66,26 @@ class HtmlNoticeParser:
         else:
             status = ParseStatus.FAILED
         result = ParseResult(status, title=title, text=text, dates=dates)
+        discovery = discover_document_links(html, snapshot.url)
+        result.links = discovery.links
+        result.content_scope = discovery.content_scope
+        result.content_text = discovery.content_text
+        result.issues = discovery.issues
+        if discovery.issues:
+            result.status = ParseStatus.PARTIAL
+            result.notes.append("正文存在无法解析的资料引用，不得声称引用覆盖完整")
+        if discovery.truncated:
+            result.status = ParseStatus.PARTIAL
+            result.notes.append("正文链接超过发现预算，覆盖未完成")
+            result.issues += ("link_budget_exhausted",)
+        if any(link.kind in ("embedded_document", "attachment", "body_image") for link in discovery.links):
+            result.status = ParseStatus.PARTIAL
+            result.notes.append("发现正文外置文件或图片，HTML文本不能代表资料已完整提取")
         if not title:
             result.notes.append("未找到 <title> 或 <h1>")
         if not dates:
             result.notes.append("正文无日期候选(可能正文在PDF附件,G8)")
         return result
-
-    @staticmethod
-    def _decode(body: bytes) -> str:
-        head = body[:2048].decode("ascii", errors="ignore")
-        m = re.search(r'charset=["\']?([\w-]+)', head, re.I)
-        encodings = [m.group(1)] if m else []
-        encodings += ["utf-8", "gb18030"]
-        for enc in encodings:
-            try:
-                return body.decode(enc)
-            except (UnicodeDecodeError, LookupError):
-                continue
-        raise UnicodeDecodeError("decode", body, 0, 1, "所有候选编码失败")
-
-    @staticmethod
-    def _title(html: str) -> str:
-        m = re.search(r"<title[^>]*>(.*?)</title>", html, re.S | re.I)
-        if not m:
-            m = re.search(r"<h1[^>]*>(.*?)</h1>", html, re.S | re.I)
-        if not m:
-            return ""
-        return re.sub(r"\s+", " ", re.sub(r"<[^>]+>", "", m.group(1))).strip()
 
     @staticmethod
     def _strip_tags(html: str) -> str:
@@ -155,6 +123,7 @@ class HtmlNoticeParser:
 
 DEFAULT_REGISTRY = ParserRegistry()
 DEFAULT_REGISTRY.register(HtmlNoticeParser())
+DEFAULT_REGISTRY.register(PdfTextParser())
 
 
 def parse_snapshot(snapshot: Snapshot, registry: ParserRegistry = DEFAULT_REGISTRY) -> ParseResult:
@@ -165,4 +134,11 @@ def parse_snapshot(snapshot: Snapshot, registry: ParserRegistry = DEFAULT_REGIST
             ParseStatus.UNSUPPORTED,
             notes=[f"载体 {snapshot.carrier!r} 无已注册解析器(ACQ-04)"],
         )
-    return parser.parse(snapshot)
+    result = parser.parse(snapshot)
+    adapter_class = f"{type(parser).__module__}.{type(parser).__qualname__}"
+    # 子类改了行为却未声明版本时，不沿用父类声称的标准实现身份。
+    manifest = type(parser).__dict__.get("manifest")
+    result.parser_info = manifest(parser) if callable(manifest) else {
+        "identity": adapter_class, "version": None, "configurationStatus": "not_reported"}
+    result.parser_info["adapterClass"] = adapter_class
+    return result

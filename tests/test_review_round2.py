@@ -122,7 +122,7 @@ class TestP1HarvestPersistence(unittest.TestCase):
     def test_unsupported_snapshot_still_saved(self):
         """P2:UNSUPPORTED载体:ok=True、快照已落盘、状态可从parse_result读出。"""
         svc = HarvestService(self.store, self.book,
-                             fetch_fn=lambda url: _snap(b"PDF", ctype="application/pdf"))
+                             fetch_fn=lambda url: _snap(b"TIFF", ctype="image/tiff"))
         out = svc.collect("https://x.edu.cn/a.pdf", name="附件")
         self.assertTrue(out.ok)
         self.assertEqual(out.parse_result.status, ParseStatus.UNSUPPORTED)

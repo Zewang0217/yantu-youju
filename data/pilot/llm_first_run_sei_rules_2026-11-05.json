@@ -1,0 +1,102 @@
+{
+  "url": "https://sei.ecnu.edu.cn/d7/c3/c33171a776131/page.htm",
+  "sha256": "838cfee6fc756997f18464495d47469300c3fc550c769dac8a4a343fcc761632",
+  "status": "structured",
+  "attempts": 1,
+  "gate_report": [
+    {
+      "name": "json_parse",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "has_conditions",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "codec_build",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "quote_grounding",
+      "passed": true,
+      "detail": "10条quote全部回溯到原文"
+    }
+  ],
+  "conditions_spec": {
+    "type": "and",
+    "conditions": [
+      {
+        "type": "unstructured",
+        "label": "中华人民共和国公民，拥护中国共产党领导，遵纪守法、品德良好",
+        "located_at": "二、报名条件 第1项",
+        "reason": "现有叶子条件类型无法表达国籍、政治立场、守法与品德要求"
+      },
+      {
+        "type": "unstructured",
+        "label": "已获得就读学校推荐免试资格的优秀应届本科毕业生",
+        "located_at": "二、报名条件 第2项",
+        "reason": "现有叶子条件类型无法表达推免资格与应届本科毕业生身份要求"
+      },
+      {
+        "type": "unstructured",
+        "label": "学习成绩优异，具有较强的创新意识、研究潜质和专业基础",
+        "located_at": "二、报名条件 第3项",
+        "reason": "正文为定性要求，未给出可结构化的成绩排名、科研亮点等具体门槛"
+      },
+      {
+        "type": "unstructured",
+        "label": "诚实守信，学风端正，无违反学术道德、专业伦理等行为",
+        "located_at": "二、报名条件 第4项",
+        "reason": "现有叶子条件类型无法表达诚信学风与学术道德要求"
+      },
+      {
+        "type": "unstructured",
+        "label": "身心健康，符合国家规定的体检要求",
+        "located_at": "二、报名条件 第5项",
+        "reason": "现有叶子条件类型无法表达身心健康与体检要求"
+      },
+      {
+        "type": "unstructured",
+        "label": "材料审核择优入围综合考核",
+        "located_at": "四、综合考核（一）材料审核",
+        "reason": "正文仅说明按材料审核成绩由高到低择优确定入围名单，未给出可结构化的具体分数或排名门槛"
+      },
+      {
+        "type": "unstructured",
+        "label": "通过资格审核并参加综合考核",
+        "located_at": "四、综合考核（二）资格审核",
+        "reason": "现有叶子条件类型无法表达资格审核程序性要求"
+      },
+      {
+        "type": "unstructured",
+        "label": "综合考核总成绩在60分（含）以上为合格",
+        "located_at": "四、综合考核（三）3.（2）",
+        "reason": "现有叶子条件类型不含综合考核总分合格线，不能用排名或语言类叶子条件表达"
+      },
+      {
+        "type": "unstructured",
+        "label": "思想政治素质和品德考核合格",
+        "located_at": "四、综合考核（三）3.（3）",
+        "reason": "现有叶子条件类型无法表达思想政治素质和品德考核合格要求"
+      },
+      {
+        "type": "unstructured",
+        "label": "在教育部推免系统按时填报志愿并确认待录取",
+        "located_at": "四、综合考核（四）考核结果、拟录取与教育部推免系统流程",
+        "reason": "现有叶子条件类型无法表达教育部推免系统填报与确认待录取的程序性要求"
+      }
+    ]
+  },
+  "windows": [
+    {
+      "kind": "deadline",
+      "confidence": "exact",
+      "date": "2026-09-07 12:00:00",
+      "quote": "；届时请密切关注我院公告、通知。 （二）报名截止时间 学院推免预报名截止时间为：2026年9月7日中午12:00 四"
+    }
+  ],
+  "prompt_version": "structuring-v1"
+}
